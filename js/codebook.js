@@ -1,5 +1,21 @@
 window.WH_CODEBOOK = {
-  hillWalkUnlockCode: "CODE",
+  hillWalkUnlockCode: "",
+  hillWalkUnlockCodesBySkillId: {
+    1: "WALK-LEAD",
+    2: "WALK-RECALL",
+    3: "WALK-DOWN",
+    4: "WALK-CLOSE",
+    5: "WALK-LIVESTOCK",
+    6: "WALK-DOGPASS",
+    7: "WALK-PEOPLE",
+    8: "WALK-FOOD",
+    9: "WALK-SETTLE",
+    10: "WALK-STOP",
+    11: "WALK-CRATE",
+    12: "WALK-HANDLING",
+    13: "WALK-MUZZLE",
+    14: "WALK-TRAILPRO"
+  },
   unlockCodesBySkillId: {
     1: "WHC-LL-7K4P",
     2: "WHC-RR-9M2X",

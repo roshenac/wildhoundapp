@@ -2,7 +2,23 @@ Wild Hound Codebook
 Single source file used by the app: js/codebook.js
 
 HILL WALK UNLOCK CODE
-CODE
+Legacy fallback: CODE
+
+HILL WALK UNLOCK CODES (SKILL-SPECIFIC)
+1  Loose-Lead Legends: WALK-LEAD
+2  Reliable Recalls: WALK-RECALL
+3  Downstay Masters: WALK-DOWN
+4  Close & Behind: WALK-CLOSE
+5  Livestock Calm: WALK-LIVESTOCK
+6  Polite Passes: Dogs: WALK-DOGPASS
+7  Polite Passes: People: WALK-PEOPLE
+8  Food Manners: WALK-FOOD
+9  Settle & Wait: WALK-SETTLE
+10 Emergency Stop / Check-In: WALK-STOP
+11 Crate or Car Calm: WALK-CRATE
+12 Handling & Vet Confidence: WALK-HANDLING
+13 Muzzle Training: WALK-MUZZLE
+14 Trail Etiquette Pro: WALK-TRAILPRO
 
 UNLOCK CODES (PURCHASE)
 1  Loose-Lead Legends: WHC-LL-7K4P

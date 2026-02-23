@@ -78,6 +78,7 @@
       ? window.WH_CODEBOOK
       : {};
     const HILL_WALK_UNLOCK_CODE = String(CODEBOOK.hillWalkUnlockCode || "CODE").trim().toUpperCase();
+    const HILL_WALK_UNLOCK_CODES_BY_SKILL_ID = CODEBOOK.hillWalkUnlockCodesBySkillId || {};
     const PURCHASE_UNLOCK_CODES_BY_SKILL_ID = CODEBOOK.unlockCodesBySkillId || {};
     const ASSESSMENT_PASS_CODES_BY_SKILL_ID = CODEBOOK.assessmentPassCodesBySkillId || {};
     const ASSESSMENT_REWORK_CODES_BY_SKILL_ID = CODEBOOK.assessmentReworkCodesBySkillId || {};
@@ -893,8 +894,9 @@
         showToast("Enter a hill walk or purchase code to continue.", "warn");
         return;
       }
+      const expectedHillWalkCode = String(HILL_WALK_UNLOCK_CODES_BY_SKILL_ID[unlockSkillModalSkillId] || "").toUpperCase();
       const expectedPurchaseCode = String(PURCHASE_UNLOCK_CODES_BY_SKILL_ID[unlockSkillModalSkillId] || "").toUpperCase();
-      const isValid = code === HILL_WALK_UNLOCK_CODE || code === expectedPurchaseCode;
+      const isValid = code === expectedHillWalkCode || code === HILL_WALK_UNLOCK_CODE || code === expectedPurchaseCode;
       if (!isValid) {
         showToast("Invalid unlock code for this skill.", "warn");
         return;
