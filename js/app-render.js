@@ -20,17 +20,6 @@
       document.getElementById("statWalksBooked").textContent = walksBooked;
       document.getElementById("statWalksAttended").textContent = walksAttended;
       document.getElementById("statSkillsPassed").textContent = skillsPassed;
-      document.getElementById("referralLinkInput").value = getReferralLink();
-      document.getElementById("referralRewardCount").textContent = state.referrals.length;
-      const referralHistory = document.getElementById("referralHistoryList");
-      referralHistory.innerHTML = state.referrals.length
-        ? state.referrals.slice(0, 5).map(entry => `
-          <div class="log-item">
-            <strong>${entry.name}</strong> - ${entry.eventLabel} (+${entry.points})
-            <div class="muted">${entry.when}</div>
-          </div>
-        `).join("")
-        : `<div class="log-item">No referral rewards yet.</div>`;
       document.getElementById("rankProgress").style.width = `${pct}%`;
       document.getElementById("progressPct").textContent = `${Math.round(pct)}%`;
       document.getElementById("progressLabel").textContent = nextRank
@@ -40,9 +29,9 @@
         document.getElementById("progressLabel").textContent = `Master unlock needs ${skillsNeededForMaster} skills + ${walksNeededForMaster} walks`;
       }
 
-      const monthly = nextSkillToUnlock() || state.skills[0];
-      document.getElementById("monthlySkillName").textContent = monthly.name;
-      document.getElementById("monthlySkillDesc").textContent = monthly.desc;
+      const monthly = getCurrentMonthlySkill() || state.skills[0];
+      document.getElementById("monthlySkillName").textContent = monthly ? monthly.name : "-";
+      document.getElementById("monthlySkillDesc").textContent = monthly ? monthly.desc : "";
 
       const unlockedTags = document.getElementById("unlockedSkillsTags");
       unlockedTags.innerHTML = unlocked.map(s => `<span class="tag">${s.name}</span>`).join("");
@@ -75,6 +64,7 @@
       const container = document.getElementById("skillsGrid");
       container.innerHTML = state.skills.map(skill => {
         const progress = skill.unlocked ? getProgressMeta(skill) : null;
+        const trailEtiquetteLocked = skill.id === 14 && !areFirstThirteenSkillsPassed();
         const statusClass = !skill.unlocked
           ? "locked"
           : `status-${(progress?.className || (skill.progressStatus || "not_started").replaceAll("_", "-"))}`;
@@ -88,8 +78,11 @@
           <div class="btn-row">
             ${skill.unlocked
               ? `<button class="btn-secondary" data-action="view-skill" data-id="${skill.id}">View Skill</button>`
-              : `<button class="btn-primary" data-action="unlock-skill" data-id="${skill.id}">Unlock Skill</button>`}
+              : trailEtiquetteLocked
+                ? `<button class="btn-secondary" disabled>Pass Skills 1-13 First</button>`
+                : `<button class="btn-primary" data-action="unlock-skill" data-id="${skill.id}">Unlock Skill</button>`}
           </div>
+          ${trailEtiquetteLocked ? `<p class="muted">Unlocks only after all first 13 skills are passed.</p>` : ``}
         </article>
       `;
       }).join("");
@@ -185,7 +178,8 @@
         document.getElementById("submitEvidenceBtn").textContent = "Book In For Skill Assessment";
         const badgeBox = document.getElementById("skillBadgeBox");
         badgeBox.classList.remove("earned");
-        badgeBox.innerHTML = "Badge Icon Placeholder";
+        badgeBox.innerHTML = "";
+        badgeBox.style.display = "none";
         document.getElementById("practiceLogPanel").style.display = "none";
         updateStickyCta();
         return;
@@ -229,6 +223,7 @@
       const badgeBox = document.getElementById("skillBadgeBox");
       if (selected.progressStatus === "passed") {
         badgeBox.classList.add("earned");
+        badgeBox.style.display = "block";
         badgeBox.innerHTML = `
           <div class="badge-award">
             <div class="badge-mark">★</div>
@@ -240,7 +235,8 @@
         `;
       } else {
         badgeBox.classList.remove("earned");
-        badgeBox.innerHTML = "Badge Icon Placeholder";
+        badgeBox.innerHTML = "";
+        badgeBox.style.display = "none";
       }
 
       const panel = document.getElementById("practiceLogPanel");

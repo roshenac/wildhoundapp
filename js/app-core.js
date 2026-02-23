@@ -20,7 +20,6 @@
       selectedLogIds: {},
       logEditContext: null,
       bookingOverrides: {},
-      referrals: [],
       pointsHistory: [],
       toasts: [],
       bookedSlotIds: [],
@@ -72,8 +71,6 @@
         { key: "trail_etiquette_recognition", label: "Trail Etiquette Recognition", points: 15 }
       ],
       growth: [
-        { key: "refer_friend_books", label: "Refer a Friend Who Books", points: 40 },
-        { key: "refer_friend_unlocks_skill", label: "Refer a Friend Who Unlocks a Skill", points: 70 },
         { key: "share_certificate_social", label: "Share Certificate on Social Media", points: 12, oneTime: true },
         { key: "bring_new_dog_walk", label: "Bring a New Dog to a Walk", points: 28 },
         { key: "leave_testimonial", label: "Leave a Testimonial", points: 14, oneTime: true }
@@ -116,7 +113,7 @@
             "user", "points", "selectedSkillId", "practicePanelOpen", "bookingFilters",
             "rankBonusesAwarded", "completionMilestonesAwarded", "awardedEvents",
             "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
-            "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "referrals", "bookingOverrides",
+            "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
             "loggedSkillLimits", "loggedDateLimit", "loggedViewMode"
           ];
           keys.forEach((key) => {
@@ -177,7 +174,6 @@
           stage5StretchDoneBySkill: state.stage5StretchDoneBySkill,
           skillStepChecks: state.skillStepChecks,
           bookingOverrides: state.bookingOverrides,
-          referrals: state.referrals,
           pointsHistory: state.pointsHistory,
           bookedSlotIds: state.bookedSlotIds,
           passedSlotIds: state.passedSlotIds,
@@ -608,6 +604,26 @@
       return state.skills.find(s => !s.unlocked);
     }
 
+    function areFirstThirteenSkillsPassed() {
+      if (!Array.isArray(state.skills) || state.skills.length < 13) return false;
+      return state.skills
+        .filter((s) => s.id >= 1 && s.id <= 13)
+        .every((s) => s.progressStatus === "passed");
+    }
+
+    function getCurrentMonthlySkill(date = new Date()) {
+      if (!Array.isArray(state.skills) || !state.skills.length) return null;
+      const monthlySkills = state.skills.filter((s) => s.id >= 1 && s.id <= 13);
+      if (!monthlySkills.length) return null;
+
+      const startYear = 2026;
+      const startMonthIndex = 2; // March (0-based)
+      const monthsSinceStart = ((date.getFullYear() - startYear) * 12) + (date.getMonth() - startMonthIndex);
+      const totalSkills = monthlySkills.length;
+      const skillIndex = ((monthsSinceStart % totalSkills) + totalSkills) % totalSkills;
+      return monthlySkills[skillIndex] || monthlySkills[0];
+    }
+
     function unlockedSkills() {
       return state.skills.filter(s => s.unlocked);
     }
@@ -618,15 +634,6 @@
 
     function hasMasterRequirements() {
       return unlockedSkills().length >= 14 && walksAttendedCount() >= 5;
-    }
-
-    function getReferralLink() {
-      const token = (state.user || "traildog")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 24) || "traildog";
-      return `https://wildhound.club/join?ref=${token}`;
     }
 
     function clampPoints(value) {
@@ -770,6 +777,10 @@
     function unlockSkill(skillId, source = "walk") {
       const skill = state.skills.find(s => s.id === skillId);
       if (!skill || skill.unlocked) return;
+      if (skill.id === 14 && !areFirstThirteenSkillsPassed()) {
+        showToast("Trail Etiquette Pro unlocks after the first 13 skills are passed.", "warn");
+        return;
+      }
       skill.unlocked = true;
       awardEvent(source === "purchase" ? "unlock_skill_purchase" : "unlock_skill_walk");
       showToast(`Unlocked: ${skill.name}`);
@@ -779,6 +790,10 @@
     function openUnlockSkillModal(skillId) {
       const skill = state.skills.find((s) => s.id === skillId);
       if (!skill || skill.unlocked) return;
+      if (skill.id === 14 && !areFirstThirteenSkillsPassed()) {
+        showToast("Pass skills 1-13 first to unlock Trail Etiquette Pro.", "warn");
+        return;
+      }
       unlockSkillModalSkillId = skillId;
       document.getElementById("unlockSkillTitle").textContent = `Unlock ${skill.name}`;
       document.getElementById("unlockSkillPrompt").textContent = "Use your hill walk code or continue to payment.";

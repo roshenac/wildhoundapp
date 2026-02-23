@@ -152,23 +152,33 @@
     document.getElementById("practiceGainBtn").addEventListener("click", () => {
       const skill = state.skills.find(s => s.id === state.selectedSkillId);
       if (!skill || !skill.unlocked) return;
-      state.practicePanelOpen = !state.practicePanelOpen;
+
+      // Keep this button as an "open + jump" action on mobile.
+      state.practicePanelOpen = true;
       renderSkillDetail();
-      if (state.practicePanelOpen) {
-        requestAnimationFrame(() => {
-          const form = document.getElementById("practiceForm");
-          const panel = document.getElementById("practiceLogPanel");
-          const focusTarget = document.getElementById("practiceDate") || form;
-          if (form && typeof form.scrollIntoView === "function") {
-            form.scrollIntoView({ behavior: "smooth", block: "start" });
-          } else if (panel && typeof panel.scrollIntoView === "function") {
-            panel.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-          if (focusTarget && typeof focusTarget.focus === "function") {
-            focusTarget.focus({ preventScroll: true });
-          }
-        });
-      }
+
+      const jumpToPracticeForm = () => {
+        const form = document.getElementById("practiceForm");
+        const panel = document.getElementById("practiceLogPanel");
+        const focusTarget = document.getElementById("practiceDate") || form;
+        const anchor = form || panel;
+        if (!anchor) return;
+
+        const topbar = document.querySelector(".topbar");
+        const offset = (topbar ? topbar.offsetHeight : 0) + 10;
+        const targetY = Math.max(0, window.scrollY + anchor.getBoundingClientRect().top - offset);
+        window.scrollTo({ top: targetY, behavior: "smooth" });
+
+        if (focusTarget && typeof focusTarget.focus === "function") {
+          focusTarget.focus({ preventScroll: true });
+        }
+      };
+
+      requestAnimationFrame(() => {
+        jumpToPracticeForm();
+        setTimeout(jumpToPracticeForm, 120);
+      });
+
       persistState();
     });
     document.getElementById("closePracticePanelBtn").addEventListener("click", () => {
@@ -336,19 +346,6 @@
       }
       showToast("Username updated.");
       renderAll();
-    });
-    document.getElementById("copyReferralBtn").addEventListener("click", async () => {
-      const link = getReferralLink();
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(link);
-          showToast("Referral link copied.");
-        } else {
-          showToast("Copy not available on this browser.", "warn");
-        }
-      } catch (e) {
-        showToast("Could not copy link. You can copy it manually.", "warn");
-      }
     });
     document.getElementById("jumpToBookingBtn").addEventListener("click", () => {
       showScreen("booking");
