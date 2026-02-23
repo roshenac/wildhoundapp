@@ -17,13 +17,7 @@ window.WH_APP_SHELL = `
 <div class="app">
   <header class="topbar">
     <div class="brand">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="7" cy="9" r="2"></circle>
-        <circle cx="17" cy="9" r="2"></circle>
-        <circle cx="12" cy="6" r="2"></circle>
-        <path d="M6 14c0 2.5 2 4 6 4s6-1.5 6-4c0-1.6-1-3-3-3H9c-2 0-3 1.4-3 3z"></path>
-      </svg>
-      Wild Hound
+      Wild Hound Club
     </div>
   </header>
 
@@ -97,6 +91,10 @@ window.WH_APP_SHELL = `
             <div class="meta-value" id="statSkillsPassed">0</div>
           </div>
         </div>
+        <div class="inline" style="margin-top: 10px;">
+          <p class="muted sync-state" id="dashboardSyncState">Sync status: Checking latest events...</p>
+          <button class="btn-secondary" type="button" data-action="retry-events-sync">Retry Sync</button>
+        </div>
       </div>
 
     </section>
@@ -165,7 +163,7 @@ window.WH_APP_SHELL = `
               Notes
               <textarea id="practiceNotes" placeholder="How did today go on trail?" autocapitalize="sentences" autocomplete="off"></textarea>
             </label>
-            <div class="btn-row" style="margin-top: 0;">
+            <div class="btn-row sticky-actions" style="margin-top: 0;">
               <button type="submit" class="btn-primary">Save Practice Log</button>
               <button type="button" class="btn-secondary" id="closePracticePanelBtn">Cancel</button>
             </div>
@@ -190,7 +188,13 @@ window.WH_APP_SHELL = `
         <p class="reward-kicker">Trail Reward Journey</p>
         <p class="reward-points"><span id="rewardPoints">0</span> pts</p>
         <p class="muted" id="nextRewardText">Next reward in 0 points.</p>
-        <p class="muted" id="currentRankBadgeText">Digital Badge: Not unlocked yet</p>
+        <div class="digital-badge-card" id="rewardBadgeCard" aria-live="polite">
+          <div class="digital-badge-icon" id="rewardBadgeIcon">🏔</div>
+          <div>
+            <p class="digital-badge-title" id="rewardBadgeTitle">No Badge Yet</p>
+            <p class="digital-badge-sub" id="rewardBadgeSub">Reach 75 points to unlock your first digital badge.</p>
+          </div>
+        </div>
         <div class="progress-wrap" style="margin-top: 12px;">
           <div class="progress-text">
             <span id="rewardJourneyLabel">Progress to next reward</span>
@@ -208,15 +212,15 @@ window.WH_APP_SHELL = `
         <p class="muted">Higher tiers now include gear, recognition, and premium trail experiences.</p>
         <p class="muted"><strong>Reward delivery:</strong> Physical rewards are currently available to UK residents only. Non-UK members receive certificates as digital email versions.</p>
         <div class="ladder" id="rewardsLadder">
-          <div class="step" data-threshold="75">Trail Starter (75 pts) - Digital Badge + App Title</div>
-          <div class="step" data-threshold="150">Trail Dog Rookie (150 pts) - Digital Badge + Sticker</div>
-          <div class="step" data-threshold="300">Trail Dog Explorer (300 pts) - Digital Badge + Mug</div>
-          <div class="step" data-threshold="500">Trail Dog Advanced (500 pts) - Digital Badge + Wild Hound Club Dog Bandana</div>
-          <div class="step" data-threshold="700">Trail Dog Pathfinder (700 pts) - Digital Badge + Wild Hound Club Beanie + Certificate</div>
-          <div class="step" data-threshold="950">Trail Dog Expert (950 pts) - Digital Badge + Wild Hound Club Hoodie + Certificate</div>
-          <div class="step" data-threshold="1250">Trail Dog Master (1250 pts) - Digital Badge + £100 Training Voucher + Certificate</div>
-          <div class="step" data-kind="walks-attended" data-walks="10">Attend 10 Walks - Trail Commitment Pack (Digital Badge + Priority Booking Window)</div>
-          <div class="step" data-kind="all-skills-pass">All 14 Skills Passed - Skills Mastery Bundle (Champion Rosette + Priority Booking Window)</div>
+          <div class="step" data-threshold="75">🧭 Trail Dog Starter (75 pts) - Digital Badge + App Title</div>
+          <div class="step" data-threshold="150">🐾 Trail Dog Rookie (150 pts) - Digital Badge + Sticker</div>
+          <div class="step" data-threshold="300">🥾 Trail Dog Explorer (300 pts) - Digital Badge + Mug</div>
+          <div class="step" data-threshold="500">⛰ Trail Dog Advanced (500 pts) - Digital Badge + Wild Hound Club Dog Bandana</div>
+          <div class="step" data-threshold="700">🗺️ Trail Dog Pathfinder (700 pts) - Digital Badge + Wild Hound Club Beanie + Certificate</div>
+          <div class="step" data-threshold="950">🏕️ Trail Dog Expert (950 pts) - Digital Badge + Wild Hound Club Hoodie + Certificate</div>
+          <div class="step" data-threshold="1250">👑 Trail Dog Master (1250 pts) - Digital Badge + £100 Training Voucher + Certificate</div>
+          <div class="step" data-kind="walks-attended" data-walks="10">🎖 Attend 10 Walks - Digital Badge + Priority Booking Window</div>
+          <div class="step" data-kind="all-skills-pass">🏅 All 14 Skills Passed - Digital Badge + Champion Rosette + Priority Booking Window</div>
         </div>
       </details>
 
@@ -296,6 +300,15 @@ window.WH_APP_SHELL = `
         <span class="glance-chip" data-glance-rank>Rank: -</span>
         <span class="glance-chip" data-glance-points>Points: 0</span>
       </div>
+      <div class="card">
+        <h3>Quick Links</h3>
+        <div class="btn-row">
+          <button type="button" class="btn-secondary" data-action="open-about-section" data-target="about-how">How It Works</button>
+          <button type="button" class="btn-secondary" data-action="open-about-section" data-target="about-points">Points</button>
+          <button type="button" class="btn-secondary" data-action="open-about-section" data-target="about-rewards">Rewards</button>
+          <button type="button" class="btn-secondary" data-action="open-about-section" data-target="about-contact">Contact</button>
+        </div>
+      </div>
 
       <details class="card highlight collapse-card" open>
         <summary>Free Trail Packing Guide</summary>
@@ -305,7 +318,7 @@ window.WH_APP_SHELL = `
         </div>
       </details>
 
-      <details class="card collapse-card" open>
+      <details class="card collapse-card" id="about-how" open>
         <summary>What Wild Hound Is</summary>
         <ul class="guide-list">
           <li>Wild Hound is a progression app for outdoor dog owners.</li>
@@ -362,12 +375,12 @@ window.WH_APP_SHELL = `
         </ul>
       </details>
 
-      <details class="card collapse-card">
+      <details class="card collapse-card" id="about-points">
         <summary>How Points Are Earned</summary>
         <div id="pointsRuleSummary" class="muted" style="margin-top: 8px;"></div>
       </details>
 
-      <details class="card collapse-card">
+      <details class="card collapse-card" id="about-rewards">
         <summary>How Reward Claims Work</summary>
         <ul class="guide-list">
           <li>Your points are lifetime progression points and are not spent when you claim a reward.</li>
@@ -403,7 +416,7 @@ window.WH_APP_SHELL = `
         </ul>
       </details>
 
-      <details class="card collapse-card">
+      <details class="card collapse-card" id="about-contact">
         <summary>Contact Us</summary>
         <p class="muted">Need help with rewards, bookings, or your account?</p>
         <div class="btn-row">
@@ -460,7 +473,7 @@ window.WH_APP_SHELL = `
         Comment
         <textarea id="logEditComment" autocapitalize="sentences" autocomplete="off"></textarea>
       </label>
-      <div class="btn-row" style="margin-top: 0;">
+      <div class="btn-row sticky-actions" style="margin-top: 0;">
         <button type="submit" class="btn-primary">Save Changes</button>
         <button type="button" class="btn-secondary" id="cancelLogEditBtn">Cancel</button>
       </div>
@@ -504,7 +517,7 @@ window.WH_APP_SHELL = `
         referrerpolicy="no-referrer"
       ></iframe>
     </div>
-    <div class="btn-row" style="margin-top: 0;">
+    <div class="btn-row sticky-actions" style="margin-top: 0;">
       <button type="button" class="btn-primary" id="rewardClaimSubmittedBtn">I've Submitted Form</button>
       <button type="button" class="btn-secondary" id="rewardClaimOpenTabBtn">Open in New Tab</button>
       <button type="button" class="btn-secondary" id="rewardClaimCancelBtn">Close</button>

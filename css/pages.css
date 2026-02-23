@@ -274,4 +274,19 @@
         z-index: 8;
         box-shadow: 0 6px 14px rgba(21, 30, 24, 0.08);
       }
+      .sticky-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        background: var(--card);
+        padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--line);
+      }
+      #rewardsLadder .reward-step-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      #rewardsLadder .reward-claim-btn {
+        width: 100%;
+      }
     }

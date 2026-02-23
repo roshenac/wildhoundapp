@@ -71,6 +71,17 @@
         renderGlanceChips();
         renderRewards();
       }
+      if (action === "open-about-section") {
+        const targetId = actionEl instanceof HTMLElement ? String(actionEl.dataset.target || "") : "";
+        if (!targetId) return;
+        const section = document.getElementById(targetId);
+        if (!(section instanceof HTMLElement)) return;
+        showScreen("settings");
+        if (section.tagName.toLowerCase() === "details") section.open = true;
+        requestAnimationFrame(() => {
+          section.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
       if (action === "claim-reward") {
         const rewardKey = actionEl instanceof HTMLElement ? String(actionEl.dataset.rewardKey || "") : "";
         const rewardStep = actionEl instanceof HTMLElement ? actionEl.closest(".step") : null;
@@ -191,7 +202,7 @@
       if (action === "book-slot") {
         const slot = state.slots.find(s => s.id === id);
         if (slot && slot.status === "pending") {
-          if (slot.bookedCount < slot.capacity) {
+          if (!slot.waitlistOnly) {
             slot.bookedCount += 1;
             slot.status = "booked";
             slot.paymentStatus = "unpaid";
@@ -209,7 +220,7 @@
       if (action === "book-walk") {
         const walk = state.monthlyWalks.find(w => w.id === id);
         if (walk && walk.status === "pending") {
-          if (walk.bookedCount < walk.capacity) {
+          if (!walk.waitlistOnly) {
             walk.bookedCount += 1;
             walk.status = "booked";
             walk.paymentStatus = "unpaid";
@@ -255,15 +266,7 @@
           const removedPoints = removePointsHistoryByIds(event.bookingPointHistoryIds || []);
           event.bookingPointHistoryIds = [];
           if (event.bookedCount > 0) event.bookedCount -= 1;
-          if (event.waitlistCount > 0) {
-            event.waitlistCount -= 1;
-            event.bookedCount += 1;
-            showToast(removedPoints > 0
-              ? `Booking canceled. -${removedPoints} pts removed. One waitlisted participant was auto-promoted.`
-              : "Booking canceled. One waitlisted participant was auto-promoted.");
-          } else {
-            showToast(removedPoints > 0 ? `Booking canceled. -${removedPoints} pts removed.` : "Booking canceled.");
-          }
+          showToast(removedPoints > 0 ? `Booking canceled. -${removedPoints} pts removed.` : "Booking canceled.");
           renderAll();
         }
       }

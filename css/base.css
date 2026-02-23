@@ -1,13 +1,13 @@
     :root {
-      --forest: #1F3D2B;
-      --cream: #F4F1E8;
-      --gold: #C2A85A;
-      --text: #4c5550;
-      --muted: #8b928d;
-      --card: #fcfaf5;
-      --line: #d7d2c6;
-      --success: #3a6a4a;
-      --warn: #8f7532;
+      --forest: #1d3525;
+      --cream: #efe8d3;
+      --gold: #9c4a3c;
+      --text: #2f3a33;
+      --muted: #6f7469;
+      --card: #f8f2e0;
+      --line: #d4c9ac;
+      --success: #1d3525;
+      --warn: #9c4a3c;
     }
 
     * { box-sizing: border-box; }
@@ -253,10 +253,15 @@
 
     .tag {
       border-radius: 999px;
-      padding: 5px 10px;
+      padding: 6px 10px;
       font-size: 0.75rem;
       border: 1px solid var(--line);
       background: #f6f4ee;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
 
     .tag.locked {

@@ -241,6 +241,7 @@
           dateISO,
           location,
           status: normalizeStatus(slot.status),
+          waitlistOnly: Boolean(slot.waitlistOnly),
           capacity: Number(slot.capacity) > 0 ? Number(slot.capacity) : 10,
           bookedCount: Math.max(0, Number(slot.bookedCount) || 0),
           waitlistCount: Math.max(0, Number(slot.waitlistCount) || 0)
@@ -676,7 +677,8 @@
       if (points >= 500) return { name: "Trail Dog Advanced", min: 500, next: 700, nextName: "Trail Dog Pathfinder" };
       if (points >= 300) return { name: "Trail Dog Explorer", min: 300, next: 500, nextName: "Trail Dog Advanced" };
       if (points >= 150) return { name: "Trail Dog Rookie", min: 150, next: 300, nextName: "Trail Dog Explorer" };
-      return { name: "Trail Dog Starter", min: 0, next: 150, nextName: "Trail Dog Rookie" };
+      if (points >= 75) return { name: "Trail Dog Starter", min: 75, next: 150, nextName: "Trail Dog Rookie" };
+      return { name: "No Rank Yet", min: 0, next: 75, nextName: "Trail Dog Starter" };
     }
 
     function nextSkillToUnlock() {

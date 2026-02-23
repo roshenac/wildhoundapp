@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-02-23T13:10:00Z",
+  "updatedAt": "2026-02-23T18:30:00Z",
   "clearAssessmentBookings": true,
   "slots": [],
   "monthlyWalks": [
@@ -9,12 +9,13 @@
       "day": "Sunday, Mar 22",
       "time": "7:30 AM",
       "dateISO": "2026-03-22",
-      "location": "Cedar Ridge",
-      "skill": "Close & Behind",
+      "location": "TBC",
+      "skill": "Loose-Lead Legends",
       "status": "pending",
       "capacity": 6,
       "bookedCount": 0,
-      "waitlistCount": 0
+      "waitlistCount": 0,
+      "waitlistOnly": false
     },
     {
       "id": 102,
@@ -22,12 +23,13 @@
       "day": "Sunday, Apr 19",
       "time": "8:00 AM",
       "dateISO": "2026-04-19",
-      "location": "Falcon Bluff",
-      "skill": "Loose-Lead Legends",
+      "location": "TBC",
+      "skill": "Reliable Recalls",
       "status": "pending",
       "capacity": 6,
       "bookedCount": 0,
-      "waitlistCount": 0
+      "waitlistCount": 0,
+      "waitlistOnly": false
     },
     {
       "id": 103,
@@ -35,12 +37,13 @@
       "day": "Sunday, May 17",
       "time": "8:30 AM",
       "dateISO": "2026-05-17",
-      "location": "Summit Spur",
-      "skill": "Reliable Recalls",
+      "location": "TBC",
+      "skill": "Downstay Masters",
       "status": "pending",
       "capacity": 6,
       "bookedCount": 0,
-      "waitlistCount": 0
+      "waitlistCount": 0,
+      "waitlistOnly": false
     },
     {
       "id": 104,
@@ -48,12 +51,13 @@
       "day": "Sunday, Jun 14",
       "time": "8:00 AM",
       "dateISO": "2026-06-14",
-      "location": "Heather Rise",
-      "skill": "Downstay Masters",
+      "location": "TBC",
+      "skill": "Close & Behind",
       "status": "pending",
       "capacity": 6,
       "bookedCount": 0,
-      "waitlistCount": 0
+      "waitlistCount": 0,
+      "waitlistOnly": false
     },
     {
       "id": 105,
@@ -61,12 +65,13 @@
       "day": "Sunday, Jul 12",
       "time": "8:00 AM",
       "dateISO": "2026-07-12",
-      "location": "Stone Ridge",
+      "location": "TBC",
       "skill": "Livestock Calm",
       "status": "pending",
       "capacity": 6,
       "bookedCount": 0,
-      "waitlistCount": 0
+      "waitlistCount": 0,
+      "waitlistOnly": false
     },
     {
       "id": 106,
@@ -74,12 +79,13 @@
       "day": "Sunday, Aug 16",
       "time": "8:00 AM",
       "dateISO": "2026-08-16",
-      "location": "Fern Peak",
+      "location": "TBC",
       "skill": "Polite Passes: Dogs",
       "status": "pending",
       "capacity": 6,
       "bookedCount": 0,
-      "waitlistCount": 0
+      "waitlistCount": 0,
+      "waitlistOnly": false
     },
     {
       "id": 107,
@@ -87,12 +93,13 @@
       "day": "Sunday, Sep 13",
       "time": "8:00 AM",
       "dateISO": "2026-09-13",
-      "location": "Windgate Loop",
-      "skill": "Food Manners",
+      "location": "TBC",
+      "skill": "Polite Passes: People",
       "status": "pending",
       "capacity": 6,
       "bookedCount": 0,
-      "waitlistCount": 0
+      "waitlistCount": 0,
+      "waitlistOnly": false
     },
     {
       "id": 108,
@@ -100,12 +107,13 @@
       "day": "Sunday, Oct 18",
       "time": "8:00 AM",
       "dateISO": "2026-10-18",
-      "location": "Long View Trail",
-      "skill": "Trail Etiquette Pro",
+      "location": "TBC",
+      "skill": "Food Manners",
       "status": "pending",
       "capacity": 6,
       "bookedCount": 0,
-      "waitlistCount": 0
+      "waitlistCount": 0,
+      "waitlistOnly": false
     }
   ]
 }

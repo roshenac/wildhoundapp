@@ -5,8 +5,8 @@
   "start_url": "/wildhoundapp/dashboard.html",
   "scope": "/wildhoundapp/",
   "display": "standalone",
-  "background_color": "#F4F1E8",
-  "theme_color": "#1F3D2B",
+  "background_color": "#efe8d3",
+  "theme_color": "#1d3525",
   "icons": [
     {
       "src": "/wildhoundapp/icon-192-v3.png",

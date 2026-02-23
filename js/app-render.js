@@ -20,6 +20,29 @@
       document.getElementById("statWalksBooked").textContent = walksBooked;
       document.getElementById("statWalksAttended").textContent = walksAttended;
       document.getElementById("statSkillsPassed").textContent = skillsPassed;
+      const dashboardSyncEl = document.getElementById("dashboardSyncState");
+      if (dashboardSyncEl) {
+        const fmt = (iso) => {
+          if (!iso) return "";
+          const dt = new Date(iso);
+          if (Number.isNaN(dt.getTime())) return "";
+          return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        };
+        const syncTime = fmt(state.eventsLastSyncedAt);
+        if (state.eventsSyncStatus === "ready") {
+          dashboardSyncEl.textContent = syncTime ? `Sync status: Up to date (last sync ${syncTime})` : "Sync status: Up to date";
+          dashboardSyncEl.classList.remove("warn");
+        } else if (state.eventsSyncStatus === "loading") {
+          dashboardSyncEl.textContent = "Sync status: Checking latest events...";
+          dashboardSyncEl.classList.remove("warn");
+        } else if (state.eventsSyncStatus === "error") {
+          dashboardSyncEl.textContent = "Sync status: Could not sync latest events.";
+          dashboardSyncEl.classList.add("warn");
+        } else {
+          dashboardSyncEl.textContent = "Sync status: Not checked yet.";
+          dashboardSyncEl.classList.remove("warn");
+        }
+      }
       document.getElementById("rankProgress").style.width = `${pct}%`;
       document.getElementById("progressPct").textContent = `${Math.round(pct)}%`;
       document.getElementById("progressLabel").textContent = nextRank
@@ -53,8 +76,19 @@
 
     function renderGlanceChips() {
       const rank = getRank(state.points);
+      const rankIconMap = {
+        "No Rank Yet": "○",
+        "Trail Dog Starter": "🧭",
+        "Trail Dog Rookie": "🐾",
+        "Trail Dog Explorer": "🥾",
+        "Trail Dog Advanced": "⛰",
+        "Trail Dog Pathfinder": "🗺️",
+        "Trail Dog Expert": "🏕️",
+        "Trail Dog Master": "👑"
+      };
+      const rankIcon = rankIconMap[rank.name] || "🏅";
       document.querySelectorAll("[data-glance-rank]").forEach(el => {
-        el.textContent = `Rank: ${rank.name}`;
+        el.textContent = `Rank: ${rankIcon} ${rank.name}`;
       });
       document.querySelectorAll("[data-glance-points]").forEach(el => {
         el.textContent = `Points: ${state.points}`;
@@ -304,13 +338,13 @@
     function renderRewards() {
       document.getElementById("rewardPoints").textContent = state.points;
       const rewardMilestones = [
-        { threshold: 75, label: "Trail Starter" },
-        { threshold: 150, label: "Trail Dog Rookie" },
-        { threshold: 300, label: "Trail Dog Explorer" },
-        { threshold: 500, label: "Trail Dog Advanced" },
-        { threshold: 700, label: "Trail Dog Pathfinder" },
-        { threshold: 950, label: "Trail Dog Expert" },
-        { threshold: 1250, label: "Trail Dog Master" }
+        { threshold: 75, label: "Trail Dog Starter", icon: "🧭", tier: "starter" },
+        { threshold: 150, label: "Trail Dog Rookie", icon: "🐾", tier: "rookie" },
+        { threshold: 300, label: "Trail Dog Explorer", icon: "🥾", tier: "explorer" },
+        { threshold: 500, label: "Trail Dog Advanced", icon: "⛰", tier: "advanced" },
+        { threshold: 700, label: "Trail Dog Pathfinder", icon: "🗺️", tier: "pathfinder" },
+        { threshold: 950, label: "Trail Dog Expert", icon: "🏕️", tier: "expert" },
+        { threshold: 1250, label: "Trail Dog Master", icon: "👑", tier: "master" }
       ];
       const prev = rewardMilestones.filter(r => state.points >= r.threshold).pop() || { threshold: 0, label: "Start" };
       const next = rewardMilestones.find(r => state.points < r.threshold);
@@ -325,11 +359,23 @@
       document.getElementById("nextRewardText").textContent = next
         ? `${Math.max(0, next.threshold - state.points)} pts to reach ${next.label}`
         : "You unlocked every reward tier. Keep climbing.";
-      const currentBadgeText = prev.threshold > 0
-        ? `Digital Badge Earned: ${prev.label}`
-        : "Digital Badge: Not unlocked yet";
-      const badgeEl = document.getElementById("currentRankBadgeText");
-      if (badgeEl) badgeEl.textContent = currentBadgeText;
+      const badgeTitleEl = document.getElementById("rewardBadgeTitle");
+      const badgeSubEl = document.getElementById("rewardBadgeSub");
+      const badgeIconEl = document.getElementById("rewardBadgeIcon");
+      const badgeCardEl = document.getElementById("rewardBadgeCard");
+      if (badgeCardEl) {
+        badgeCardEl.classList.remove("tier-starter", "tier-rookie", "tier-explorer", "tier-advanced", "tier-pathfinder", "tier-expert", "tier-master");
+        if (prev.threshold > 0 && prev.tier) badgeCardEl.classList.add(`tier-${prev.tier}`);
+      }
+      if (badgeTitleEl) badgeTitleEl.textContent = prev.threshold > 0 ? `${prev.label} Digital Badge` : "No Badge Yet";
+      if (badgeSubEl) {
+        badgeSubEl.textContent = prev.threshold > 0
+          ? ""
+          : "Reach 75 points to unlock your first digital badge.";
+      }
+      if (badgeIconEl) {
+        badgeIconEl.textContent = prev.threshold > 0 ? (prev.icon || "🏅") : "🏔";
+      }
       if (!next && !hasMasterRequirements()) {
         const skillsNeeded = Math.max(0, 14 - unlockedSkills().length);
         const walksNeeded = Math.max(0, 5 - walksAttendedCount());
@@ -391,17 +437,17 @@
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;");
         const buttonHtml = isTrailStarter
-          ? `<span class="muted">${reached ? "Auto Unlocked" : "Locked"}</span>`
+          ? `<span class="muted reward-step-status">${reached ? "Auto Unlocked" : "Locked"}</span>`
           : `<button
               type="button"
-              class="btn-secondary"
+              class="btn-secondary reward-claim-btn"
               data-action="claim-reward"
               data-reward-key="${rewardKey}"
               ${(!reached || claimed) ? "disabled" : ""}
             >${btnText}</button>`;
         step.innerHTML = `
-          <div class="inline">
-            <span>${escapedLabel}</span>
+          <div class="inline reward-step-row">
+            <span class="reward-step-label">${escapedLabel}</span>
             ${buttonHtml}
           </div>
         `;
@@ -516,7 +562,7 @@
       const renderEventCard = (event) => {
         const paymentState = event.paymentStatus || "unpaid";
         const primaryAction = event.status === "pending"
-          ? `<button class="btn-primary" data-action="${event.eventType === "assessment" ? "book-slot" : "book-walk"}" data-id="${event.id}">${event.eventType === "assessment" ? "Book" : "Book Walk"}</button>`
+          ? `<button class="btn-primary" data-action="${event.eventType === "assessment" ? "book-slot" : "book-walk"}" data-id="${event.id}">${event.waitlistOnly ? "Join Waitlist" : (event.eventType === "assessment" ? "Book" : "Book Walk")}</button>`
           : event.status === "booked" && paymentState === "paid"
             ? ""
             : event.status === "booked"
@@ -541,8 +587,7 @@
                 ${event.eventType === "assessment" ? "Assessment Day" : event.month}
                 | ${event.location}
                 ${event.eventType === "hillwalk" ? ` | Skill Focus: ${event.skill}` : ""}
-                | Spots ${event.bookedCount}/${event.capacity}
-                ${event.waitlistCount ? ` | Waitlist ${event.waitlistCount}` : ""}
+                | ${event.waitlistOnly ? "Waitlist Only" : "Booking Open"}
               </small>
             </div>
             <div class="btn-row" style="margin:0;">
