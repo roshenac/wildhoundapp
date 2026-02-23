@@ -532,35 +532,37 @@
         const skillName = resolveSkillNameFromSourceKey(item && item.sourceKey);
         const sourceKey = String((item && item.sourceKey) || "");
         const isWalkAttendance = /attend monthly walk/i.test(base);
-        const parseMonthFromWhen = (whenText) => {
-          const raw = String(whenText || "").trim();
-          if (!raw) return "";
-          const direct = new Date(raw);
-          if (!Number.isNaN(direct.getTime())) {
-            return direct.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-          }
-          const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-          if (!m) return "";
-          const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
-          if (Number.isNaN(d.getTime())) return "";
-          return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+        const hasMonthNameInBase = /\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i.test(base);
+        const resolveWalkEventById = (walkId) => {
+          const fromState = (state.monthlyWalks || []).find((w) => Number(w.id) === Number(walkId));
+          if (fromState) return fromState;
+          const bundled = (typeof window !== "undefined" && window.WH_EVENTS_DATA && Array.isArray(window.WH_EVENTS_DATA.monthlyWalks))
+            ? window.WH_EVENTS_DATA.monthlyWalks
+            : [];
+          return bundled.find((w) => Number(w.id) === Number(walkId)) || null;
+        };
+        const monthFromEvent = (event) => {
+          if (!event || typeof event !== "object") return "";
+          if (event.month && String(event.month).trim()) return String(event.month).trim();
+          const iso = String(event.dateISO || "");
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+          const dt = new Date(`${iso}T00:00:00`);
+          if (Number.isNaN(dt.getTime())) return "";
+          return dt.toLocaleDateString(undefined, { month: "long", year: "numeric" });
         };
         const walkMatch = sourceKey.match(/^booking:hillwalk:(\d+)$/);
         if (walkMatch) {
           const walkId = Number(walkMatch[1]);
-          const walk = (state.monthlyWalks || []).find((w) => Number(w.id) === walkId);
+          const walk = resolveWalkEventById(walkId);
           if (walk) {
-            const monthText = walk.month || walk.day || "";
+            const monthText = monthFromEvent(walk);
             if (monthText && !base.toLowerCase().includes(monthText.toLowerCase())) {
               return `${base} - ${monthText}`;
             }
           }
         }
-        if (isWalkAttendance) {
-          const monthText = parseMonthFromWhen(item && item.when);
-          if (monthText && !base.toLowerCase().includes(monthText.toLowerCase())) {
-            return `${base} - ${monthText}`;
-          }
+        if (isWalkAttendance && !hasMonthNameInBase) {
+          return base;
         }
         if (!skillName) return base;
         if (base.toLowerCase().includes(skillName.toLowerCase())) return base;
