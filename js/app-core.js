@@ -35,6 +35,7 @@
       seenEventsVersion: "",
       dismissedEventsVersion: "",
       hasPendingAppUpdate: false,
+      lastBackupAt: "",
       practiceLogs: {},
       skills: [
         { id: 1, name: "Loose-Lead Legends", desc: "Confident loose-lead skills across trail conditions.", unlocked: true, points: 60, progressStatus: "not_started" },
@@ -108,7 +109,7 @@
             "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
             "claimedRewards", "rewardClaimDetails",
             "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
-            "loggedSkillLimits", "loggedDateLimit", "loggedViewMode"
+            "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt"
           ];
           keys.forEach((key) => {
             if (saved[key] !== undefined) state[key] = saved[key];
@@ -127,63 +128,121 @@
       state.toasts = [];
     }
 
+    function buildPersistedSnapshot() {
+      const nextBookingOverrides = {};
+      (state.slots || []).forEach((slot) => {
+        const key = `assessment:${slot.id}`;
+        const payload = {};
+        if (slot.status) payload.status = slot.status;
+        if (slot.paymentStatus) payload.paymentStatus = slot.paymentStatus;
+        if (Array.isArray(slot.bookingPointHistoryIds) && slot.bookingPointHistoryIds.length) {
+          payload.bookingPointHistoryIds = slot.bookingPointHistoryIds;
+        }
+        if (Object.keys(payload).length) nextBookingOverrides[key] = payload;
+      });
+      (state.monthlyWalks || []).forEach((walk) => {
+        const key = `hillwalk:${walk.id}`;
+        const payload = {};
+        if (walk.status) payload.status = walk.status;
+        if (walk.paymentStatus) payload.paymentStatus = walk.paymentStatus;
+        if (Array.isArray(walk.bookingPointHistoryIds) && walk.bookingPointHistoryIds.length) {
+          payload.bookingPointHistoryIds = walk.bookingPointHistoryIds;
+        }
+        if (Object.keys(payload).length) nextBookingOverrides[key] = payload;
+      });
+      state.bookingOverrides = nextBookingOverrides;
+
+      return {
+        user: state.user,
+        points: state.points,
+        selectedSkillId: state.selectedSkillId,
+        practicePanelOpen: state.practicePanelOpen,
+        bookingFilters: state.bookingFilters,
+        rankBonusesAwarded: state.rankBonusesAwarded,
+        completionMilestonesAwarded: state.completionMilestonesAwarded,
+        awardedEvents: state.awardedEvents,
+        awardedSourceKeys: state.awardedSourceKeys,
+        skillEvidenceSubmitted: state.skillEvidenceSubmitted,
+        skillAssessmentsPassed: state.skillAssessmentsPassed,
+        assessmentDiscountBySkill: state.assessmentDiscountBySkill,
+        level5ReachedBySkill: state.level5ReachedBySkill,
+        stage5StretchDoneBySkill: state.stage5StretchDoneBySkill,
+        skillStepChecks: state.skillStepChecks,
+        bookingOverrides: state.bookingOverrides,
+        pointsHistory: state.pointsHistory,
+        claimedRewards: state.claimedRewards,
+        rewardClaimDetails: state.rewardClaimDetails,
+        bookedSlotIds: state.bookedSlotIds,
+        passedSlotIds: state.passedSlotIds,
+        practiceLogs: state.practiceLogs,
+        loggedSkillLimits: state.loggedSkillLimits,
+        loggedDateLimit: state.loggedDateLimit,
+        loggedViewMode: state.loggedViewMode,
+        skills: state.skills,
+        lastBackupAt: state.lastBackupAt
+      };
+    }
+
     function persistState() {
       try {
-        const nextBookingOverrides = {};
-        (state.slots || []).forEach((slot) => {
-          const key = `assessment:${slot.id}`;
-          const payload = {};
-          if (slot.status) payload.status = slot.status;
-          if (slot.paymentStatus) payload.paymentStatus = slot.paymentStatus;
-          if (Array.isArray(slot.bookingPointHistoryIds) && slot.bookingPointHistoryIds.length) {
-            payload.bookingPointHistoryIds = slot.bookingPointHistoryIds;
-          }
-          if (Object.keys(payload).length) nextBookingOverrides[key] = payload;
-        });
-        (state.monthlyWalks || []).forEach((walk) => {
-          const key = `hillwalk:${walk.id}`;
-          const payload = {};
-          if (walk.status) payload.status = walk.status;
-          if (walk.paymentStatus) payload.paymentStatus = walk.paymentStatus;
-          if (Array.isArray(walk.bookingPointHistoryIds) && walk.bookingPointHistoryIds.length) {
-            payload.bookingPointHistoryIds = walk.bookingPointHistoryIds;
-          }
-          if (Object.keys(payload).length) nextBookingOverrides[key] = payload;
-        });
-        state.bookingOverrides = nextBookingOverrides;
-
-        const snapshot = {
-          user: state.user,
-          points: state.points,
-          selectedSkillId: state.selectedSkillId,
-          practicePanelOpen: state.practicePanelOpen,
-          bookingFilters: state.bookingFilters,
-          rankBonusesAwarded: state.rankBonusesAwarded,
-          completionMilestonesAwarded: state.completionMilestonesAwarded,
-          awardedEvents: state.awardedEvents,
-          awardedSourceKeys: state.awardedSourceKeys,
-          skillEvidenceSubmitted: state.skillEvidenceSubmitted,
-          skillAssessmentsPassed: state.skillAssessmentsPassed,
-          assessmentDiscountBySkill: state.assessmentDiscountBySkill,
-          level5ReachedBySkill: state.level5ReachedBySkill,
-          stage5StretchDoneBySkill: state.stage5StretchDoneBySkill,
-          skillStepChecks: state.skillStepChecks,
-          bookingOverrides: state.bookingOverrides,
-          pointsHistory: state.pointsHistory,
-          claimedRewards: state.claimedRewards,
-          rewardClaimDetails: state.rewardClaimDetails,
-          bookedSlotIds: state.bookedSlotIds,
-          passedSlotIds: state.passedSlotIds,
-          practiceLogs: state.practiceLogs,
-          loggedSkillLimits: state.loggedSkillLimits,
-          loggedDateLimit: state.loggedDateLimit,
-          loggedViewMode: state.loggedViewMode,
-          skills: state.skills
-        };
+        const snapshot = buildPersistedSnapshot();
         localStorage.setItem(SAVED_APP_STATE_KEY, JSON.stringify(snapshot));
       } catch (e) {
         // Ignore storage access issues in preview environments.
       }
+    }
+
+    function exportAppBackupJson() {
+      const payload = {
+        app: "wildhound",
+        backupVersion: 1,
+        exportedAt: new Date().toISOString(),
+        state: buildPersistedSnapshot()
+      };
+      return JSON.stringify(payload, null, 2);
+    }
+
+    function importAppBackupJson(rawText) {
+      let parsed;
+      try {
+        parsed = JSON.parse(String(rawText || ""));
+      } catch (error) {
+        return { ok: false, message: "Backup file is not valid JSON." };
+      }
+      const incoming = (parsed && typeof parsed === "object" && parsed.state && typeof parsed.state === "object")
+        ? parsed.state
+        : parsed;
+      if (!incoming || typeof incoming !== "object") {
+        return { ok: false, message: "Backup file does not contain app data." };
+      }
+
+      const keys = [
+        "user", "points", "selectedSkillId", "practicePanelOpen", "bookingFilters",
+        "rankBonusesAwarded", "completionMilestonesAwarded", "awardedEvents", "awardedSourceKeys",
+        "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
+        "claimedRewards", "rewardClaimDetails",
+        "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
+        "loggedSkillLimits", "loggedDateLimit", "loggedViewMode"
+      ];
+      keys.forEach((key) => {
+        if (incoming[key] !== undefined) state[key] = incoming[key];
+      });
+
+      if (!state.user || !String(state.user).trim()) state.user = "User";
+      normalizeBookingFilters();
+      normalizeSkillCatalog();
+      normalizeBookingData();
+      ensurePracticeLogIds();
+      recalculatePointsFromHistory();
+      try {
+        localStorage.setItem(SAVED_USERNAME_KEY, state.user);
+      } catch (error) {
+        // Ignore storage access issues in preview environments.
+      }
+      state.lastBackupAt = new Date().toISOString();
+      renderAll();
+      persistState();
+      return { ok: true };
     }
 
     function isStandaloneMode() {

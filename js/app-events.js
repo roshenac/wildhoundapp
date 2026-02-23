@@ -606,6 +606,52 @@
         if (backdrop) backdrop.style.display = "none";
       }
     });
+    document.getElementById("aboutExportDataBtn").addEventListener("click", () => {
+      try {
+        const json = exportAppBackupJson();
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const stamp = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `wildhound-backup-${stamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        state.lastBackupAt = new Date().toISOString();
+        showToast("Backup exported.");
+        persistState();
+        renderDashboard();
+      } catch (error) {
+        showToast("Could not export backup.", "warn");
+      }
+    });
+    document.getElementById("aboutImportDataBtn").addEventListener("click", () => {
+      const fileInput = document.getElementById("aboutImportDataFile");
+      if (!(fileInput instanceof HTMLInputElement)) return;
+      fileInput.value = "";
+      fileInput.click();
+    });
+    document.getElementById("aboutImportDataFile").addEventListener("change", (e) => {
+      const input = e.target;
+      if (!(input instanceof HTMLInputElement)) return;
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = importAppBackupJson(String(reader.result || ""));
+        if (result && result.ok) {
+          showToast("Backup imported.");
+          return;
+        }
+        showToast((result && result.message) || "Could not import backup.", "warn");
+      };
+      reader.onerror = () => {
+        showToast("Could not read backup file.", "warn");
+      };
+      reader.readAsText(file);
+    });
     document.addEventListener("keydown", (e) => {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;

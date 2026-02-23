@@ -43,6 +43,30 @@
           dashboardSyncEl.classList.remove("warn");
         }
       }
+      const backupTextEl = document.getElementById("dashboardBackupText");
+      const lastBackupEl = document.getElementById("dashboardLastBackup");
+      if (backupTextEl) {
+        if (!state.lastBackupAt) {
+          backupTextEl.textContent = "No backup exported yet. Export now before changing or deleting your app/device.";
+          if (lastBackupEl) lastBackupEl.textContent = "Last backed up: Never";
+        } else {
+          const backupDate = new Date(state.lastBackupAt);
+          if (Number.isNaN(backupDate.getTime())) {
+            backupTextEl.textContent = "Backup date unavailable. Export a fresh backup now.";
+            if (lastBackupEl) lastBackupEl.textContent = "Last backed up: Unknown";
+          } else {
+            const days = Math.floor((Date.now() - backupDate.getTime()) / (24 * 60 * 60 * 1000));
+            const last = backupDate.toLocaleDateString();
+            const lastWithTime = `${backupDate.toLocaleDateString()} ${backupDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+            if (lastBackupEl) lastBackupEl.textContent = `Last backed up: ${lastWithTime}`;
+            if (days >= 14) {
+              backupTextEl.textContent = `Last backup: ${last} (${days} days ago). Consider exporting a fresh backup now.`;
+            } else {
+              backupTextEl.textContent = `Last backup: ${last}. Keep this file safe in cloud storage or email.`;
+            }
+          }
+        }
+      }
       document.getElementById("rankProgress").style.width = `${pct}%`;
       document.getElementById("progressPct").textContent = `${Math.round(pct)}%`;
       document.getElementById("progressLabel").textContent = nextRank

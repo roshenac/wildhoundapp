@@ -91,9 +91,18 @@ window.WH_APP_SHELL = `
             <div class="meta-value" id="statSkillsPassed">0</div>
           </div>
         </div>
-        <div class="inline" style="margin-top: 10px;">
+      </div>
+
+      <div class="card">
+        <h3>Backup Reminder</h3>
+        <p class="muted" id="dashboardBackupText">Export your data regularly so you can restore progress on a new phone.</p>
+        <p class="muted" id="dashboardLastBackup">Last backed up: Never</p>
+        <div class="backup-tools">
           <p class="muted sync-state" id="dashboardSyncState">Sync status: Checking latest events...</p>
-          <button class="btn-secondary" type="button" data-action="retry-events-sync">Retry Sync</button>
+          <div class="btn-row backup-actions">
+            <button class="btn-secondary" type="button" data-action="retry-events-sync">Retry Sync</button>
+          <button class="btn-secondary" type="button" data-action="open-about-section" data-target="about-backup">Open Backup & Restore</button>
+          </div>
         </div>
       </div>
 
@@ -416,6 +425,16 @@ window.WH_APP_SHELL = `
           <li>Upcoming events and booking availability update automatically in the app.</li>
           <li>If you change phone or clear browser/app data, local progress may reset.</li>
         </ul>
+      </details>
+
+      <details class="card collapse-card" id="about-backup">
+        <summary>Backup & Restore</summary>
+        <p class="muted">Export your progress to a backup file, then import it on a new phone/device.</p>
+        <div class="btn-row">
+          <button type="button" class="btn-secondary" id="aboutExportDataBtn">Export My Data</button>
+          <button type="button" class="btn-secondary" id="aboutImportDataBtn">Import Backup</button>
+          <input type="file" id="aboutImportDataFile" accept="application/json,.json" style="display:none" />
+        </div>
       </details>
 
       <details class="card collapse-card" id="about-contact">

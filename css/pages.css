@@ -173,6 +173,18 @@
     .sync-state.warn {
       color: #8a4f2a;
     }
+    .backup-tools {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .backup-tools .sync-state {
+      margin-top: 0;
+    }
+    .backup-actions {
+      margin-top: 0;
+      justify-content: flex-start;
+    }
     .log-select-row {
       display: flex;
       align-items: center;
