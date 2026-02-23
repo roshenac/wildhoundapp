@@ -19,6 +19,7 @@
 
   function boot() {
     injectShell()
+      .then(function () { return loadScript('js/codebook.js'); })
       .then(function () { return loadScript('js/events-data.js'); })
       .then(function () { return loadScript('js/app-core.js'); })
       .then(function () { return loadScript('js/app-render.js'); })

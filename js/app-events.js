@@ -244,7 +244,7 @@
           const label = kind === "assessment"
             ? `${event.day} ${event.time}`
             : (event.month || `${event.day} ${event.time}`);
-          const payUrl = `payment.html?type=${encodeURIComponent(payType)}&skill=${encodeURIComponent(label)}&skillId=${event.id}`;
+          const payUrl = `payment.html?type=${encodeURIComponent(payType)}&skill=${encodeURIComponent(label)}&skillId=${event.id}&returnTo=${encodeURIComponent("booking.html")}`;
           window.location.assign(payUrl);
           showToast("Complete payment in Stripe. Paid status should be updated from Stripe confirmation.");
         }

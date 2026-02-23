@@ -74,9 +74,13 @@
     const SAVED_APP_STATE_KEY = "wildhound_app_state_v1";
     const SAVED_SEEN_EVENTS_VERSION_KEY = "wildhound_seen_events_version";
     const SAVED_DISMISSED_EVENTS_VERSION_KEY = "wildhound_dismissed_events_version";
-    const HILL_WALK_UNLOCK_CODE = "CODE";
-    const ASSESSMENT_PASS_CODE = "PASS5";
-    const ASSESSMENT_MORE_WORK_CODE = "REWORK5";
+    const CODEBOOK = (typeof window !== "undefined" && window.WH_CODEBOOK && typeof window.WH_CODEBOOK === "object")
+      ? window.WH_CODEBOOK
+      : {};
+    const HILL_WALK_UNLOCK_CODE = String(CODEBOOK.hillWalkUnlockCode || "CODE").trim().toUpperCase();
+    const PURCHASE_UNLOCK_CODES_BY_SKILL_ID = CODEBOOK.unlockCodesBySkillId || {};
+    const ASSESSMENT_PASS_CODES_BY_SKILL_ID = CODEBOOK.assessmentPassCodesBySkillId || {};
+    const ASSESSMENT_REWORK_CODES_BY_SKILL_ID = CODEBOOK.assessmentReworkCodesBySkillId || {};
     const SKILL_PAYMENT_PAGE_URL = "payment.html";
     const REMOTE_EVENTS_URL = (typeof window !== "undefined" && window.WH_EVENTS_URL)
       ? String(window.WH_EVENTS_URL)
@@ -869,7 +873,7 @@
       }
       unlockSkillModalSkillId = skillId;
       document.getElementById("unlockSkillTitle").textContent = `Unlock ${skill.name}`;
-      document.getElementById("unlockSkillPrompt").textContent = "Use your hill walk code or continue to payment.";
+      document.getElementById("unlockSkillPrompt").textContent = `Unlock ${skill.name} with a hill walk code or purchase code.`;
       document.getElementById("unlockCodeInput").value = "";
       document.getElementById("unlockCodeSection").style.display = "none";
       document.getElementById("unlockSkillModalBackdrop").style.display = "flex";
@@ -886,11 +890,13 @@
       if (!unlockSkillModalSkillId) return;
       const code = (document.getElementById("unlockCodeInput").value || "").trim().toUpperCase();
       if (!code) {
-        showToast("Enter a hill walk code to continue.", "warn");
+        showToast("Enter a hill walk or purchase code to continue.", "warn");
         return;
       }
-      if (code !== HILL_WALK_UNLOCK_CODE) {
-        showToast("Invalid hill walk code.", "warn");
+      const expectedPurchaseCode = String(PURCHASE_UNLOCK_CODES_BY_SKILL_ID[unlockSkillModalSkillId] || "").toUpperCase();
+      const isValid = code === HILL_WALK_UNLOCK_CODE || code === expectedPurchaseCode;
+      if (!isValid) {
+        showToast("Invalid unlock code for this skill.", "warn");
         return;
       }
       const targetSkillId = unlockSkillModalSkillId;
@@ -903,7 +909,7 @@
       const skill = state.skills.find((s) => s.id === unlockSkillModalSkillId);
       if (!skill) return;
 
-      const payUrl = `${SKILL_PAYMENT_PAGE_URL}?type=skill&skill=${encodeURIComponent(skill.name)}&skillId=${skill.id}`;
+      const payUrl = `${SKILL_PAYMENT_PAGE_URL}?type=skill&skill=${encodeURIComponent(skill.name)}&skillId=${skill.id}&returnTo=${encodeURIComponent("skills.html")}`;
       closeUnlockSkillModal();
       window.location.assign(payUrl);
     }
@@ -922,7 +928,10 @@
         return;
       }
 
-      if (code === ASSESSMENT_PASS_CODE) {
+      const expectedPassCode = String(ASSESSMENT_PASS_CODES_BY_SKILL_ID[skill.id] || "").toUpperCase();
+      const expectedReworkCode = String(ASSESSMENT_REWORK_CODES_BY_SKILL_ID[skill.id] || "").toUpperCase();
+
+      if (code === expectedPassCode) {
         skill.progressStatus = "passed";
         state.skillEvidenceSubmitted[skill.id] = true;
         delete state.assessmentDiscountBySkill[skill.id];
@@ -934,7 +943,7 @@
         return;
       }
 
-      if (code === ASSESSMENT_MORE_WORK_CODE) {
+      if (code === expectedReworkCode) {
         skill.progressStatus = "needs_more_work";
         state.skillEvidenceSubmitted[skill.id] = true;
         delete state.skillAssessmentsPassed[skill.id];
@@ -944,7 +953,7 @@
         return;
       }
 
-      showToast("Invalid assessor code.", "warn");
+      showToast("Invalid assessor code for this skill.", "warn");
     }
 
     function normalizeScreenId(rawScreenId) {

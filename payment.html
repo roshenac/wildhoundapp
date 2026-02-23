@@ -118,6 +118,7 @@
     <div class="card">
       <h2>Secure Checkout</h2>
       <p class="muted">You will be redirected to Stripe to complete payment securely.</p>
+      <p class="muted">After payment, use your emailed unlock code in the app to unlock this skill.</p>
       <div class="field">
         <label for="email">Email (optional)</label>
         <input id="email" type="email" placeholder="you@example.com" />
@@ -135,6 +136,8 @@
     const paymentType = (params.get("type") || "skill").toLowerCase();
     const skill = params.get("skill") || "Selected Skill";
     const skillId = params.get("skillId") || "";
+    const returnToRaw = params.get("returnTo") || "";
+    const isTestMode = params.get("test") === "1";
     document.getElementById("skillLine").textContent = `Unlocking: ${skill}`;
 
     const STRIPE_PAYMENT_LINKS = {
@@ -143,22 +146,98 @@
       assessment: "https://buy.stripe.com/bJe14p0LD9jIbxj6Qt57W02"
     };
 
+    // One Stripe Payment Link per skill unlock (method requested).
+    // Fill each value with that skill's dedicated Stripe link.
+    // If a skill link is left blank, checkout falls back to STRIPE_PAYMENT_LINKS.skill.
+    const SKILL_PAYMENT_LINKS_BY_ID = {
+      1: "https://buy.stripe.com/14AeVf9i9cvU7h33Eh57W00",
+      2: "https://buy.stripe.com/cNi5kFbqhcvUeJv3Eh57W0g",
+      3: "https://buy.stripe.com/28E14p0LD7bAeJv7Ux57W04",
+      4: "https://buy.stripe.com/00w6oJ7a1anM8l70s557W05",
+      5: "https://buy.stripe.com/6oUfZjeCtfI66cZcaN57W06",
+      6: "https://buy.stripe.com/14A14p2TLgMa58V1w957W07",
+      7: "https://buy.stripe.com/fZu6oJ0LD7bAgRDcaN57W08",
+      8: "https://buy.stripe.com/9B6bJ39i9anMfNzcaN57W09",
+      9: "https://buy.stripe.com/00w7sN2TL2VkgRDfmZ57W0a",
+      10: "https://buy.stripe.com/cNibJ37a11RgfNzgr357W0b",
+      11: "https://buy.stripe.com/cNi8wR0LDbrQ44R0s557W0c",
+      12: "https://buy.stripe.com/fZu4gB8e59jIgRD8YB57W0d",
+      13: "https://buy.stripe.com/14A28tfGx7bA8l7fmZ57W0e",
+      14: "https://buy.stripe.com/3cI28t65X9jIdFr3Eh57W0f"
+    };
+
     function getStripeLink(type) {
       return STRIPE_PAYMENT_LINKS[type] || STRIPE_PAYMENT_LINKS.skill;
     }
 
+    function getSkillStripeLink(skillIdValue) {
+      const id = Number(skillIdValue);
+      if (!Number.isFinite(id) || id <= 0) return STRIPE_PAYMENT_LINKS.skill;
+      const specific = SKILL_PAYMENT_LINKS_BY_ID[id];
+      return (typeof specific === "string" && specific.trim())
+        ? specific.trim()
+        : STRIPE_PAYMENT_LINKS.skill;
+    }
+
+    function resolveSafeReturnTo(raw) {
+      if (!raw) return "";
+      try {
+        const u = new URL(raw, window.location.href);
+        if (u.origin !== window.location.origin) return "";
+        const fileName = (u.pathname.split("/").pop() || "").toLowerCase();
+        const allowed = new Set(["booking.html", "skills.html", "dashboard.html"]);
+        if (!allowed.has(fileName)) return "";
+        return `${fileName}${u.search || ""}${u.hash || ""}`;
+      } catch (e) {
+        return "";
+      }
+    }
+
+    if (isTestMode) {
+      const info = document.createElement("p");
+      info.className = "muted";
+      info.style.marginTop = "8px";
+      info.innerHTML = "<strong>Test mode:</strong> no charge will be made.";
+      const card = document.querySelector(".card:nth-of-type(2)");
+      if (card) card.insertBefore(info, card.querySelector(".field"));
+    }
+
     document.getElementById("payBtn").addEventListener("click", () => {
-      const base = getStripeLink(paymentType);
+      const returnTo = resolveSafeReturnTo(returnToRaw);
+      if (isTestMode) {
+        const unlockCode = paymentType === "skill" && skillId ? `SKILL${skillId}` : "";
+        const done = document.getElementById("doneMsg");
+        done.style.display = "block";
+        done.textContent = unlockCode
+          ? `Test payment complete. Use unlock code: ${unlockCode}`
+          : "Test payment complete.";
+        setTimeout(() => {
+          const target = returnTo || "booking.html?tab=booking";
+          const joiner = target.includes("?") ? "&" : "?";
+          window.location.assign(`${target}${joiner}test_paid=1`);
+        }, 900);
+        return;
+      }
+
+      const base = paymentType === "skill"
+        ? getSkillStripeLink(skillId)
+        : getStripeLink(paymentType);
       const email = (document.getElementById("email").value || "").trim();
       const url = new URL(base);
       if (email) url.searchParams.set("prefilled_email", email);
-      url.searchParams.set("client_reference_id", `${paymentType}-${skillId || "unknown"}`);
+      const skillSlug = String(skill || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 32) || "unknown-skill";
+      url.searchParams.set("client_reference_id", `${paymentType}-${skillId || "unknown"}-${skillSlug}`);
       document.getElementById("doneMsg").style.display = "block";
       window.location.href = url.toString();
     });
 
     document.getElementById("backToAppBtn").addEventListener("click", () => {
-      const fallbackUrl = "booking.html?tab=booking";
+      const returnTo = resolveSafeReturnTo(returnToRaw);
+      const fallbackUrl = returnTo || "booking.html?tab=booking";
       const hasHistory = window.history.length > 1;
       const sameOriginReferrer = (() => {
         try {

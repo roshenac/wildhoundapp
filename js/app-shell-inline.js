@@ -363,6 +363,8 @@ window.WH_APP_SHELL = `
           <li>Dashboard booking stats are clickable shortcuts to filtered booking views.</li>
           <li>Booking and canceling adjusts related points based on your event history.</li>
           <li>Payment opens Stripe checkout for skill unlocks, walks, and assessments.</li>
+          <li>Skill unlocks are completed when you enter your post-payment unlock code in the app.</li>
+          <li><strong>Costs:</strong> Skill unlock £15 (or free via related hill walk), monthly hill walk £25, assessment day £40.</li>
         </ul>
       </details>
 
@@ -485,15 +487,20 @@ window.WH_APP_SHELL = `
   <div class="modal">
     <h3 id="unlockSkillTitle">Unlock Skill</h3>
     <p class="muted" id="unlockSkillPrompt">Choose how you want to unlock this skill.</p>
+    <ol class="guide-list" id="unlockSkillSteps">
+      <li>Pay for this skill in Stripe.</li>
+      <li>Receive your purchase unlock code by email.</li>
+      <li>Return here and enter the code to unlock.</li>
+    </ol>
     <div class="btn-row">
-      <button type="button" class="btn-primary" id="unlockViaCodeBtn">Enter Hill Walk Code</button>
-      <button type="button" class="btn-secondary" id="unlockViaPaymentBtn">Go to Payment Page</button>
+      <button type="button" class="btn-primary" id="unlockViaCodeBtn">Enter Unlock Code</button>
+      <button type="button" class="btn-secondary" id="unlockViaPaymentBtn">Pay for This Skill</button>
       <button type="button" class="btn-secondary" id="unlockSkillCancelBtn">Cancel</button>
     </div>
     <div id="unlockCodeSection" class="form-grid" style="display: none; margin-top: 10px;">
       <label>
-        Hill Walk Code
-        <input type="text" id="unlockCodeInput" placeholder="Enter your code" autocapitalize="characters" spellcheck="false" autocomplete="one-time-code" />
+        Unlock Code
+        <input type="text" id="unlockCodeInput" placeholder="Enter hill walk or purchase code" autocapitalize="characters" spellcheck="false" autocomplete="one-time-code" />
       </label>
       <div class="btn-row" style="margin-top: 0;">
         <button type="button" class="btn-primary" id="unlockCodeSubmitBtn">Unlock with Code</button>

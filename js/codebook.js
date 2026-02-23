@@ -1,0 +1,51 @@
+window.WH_CODEBOOK = {
+  hillWalkUnlockCode: "CODE",
+  unlockCodesBySkillId: {
+    1: "WHC-LL-7K4P",
+    2: "WHC-RR-9M2X",
+    3: "WHC-DS-4T8N",
+    4: "WHC-CB-6Q3L",
+    5: "WHC-LC-2W7R",
+    6: "WHC-PD-8V5M",
+    7: "WHC-PP-3X9K",
+    8: "WHC-FM-5N2Q",
+    9: "WHC-SW-7R4T",
+    10: "WHC-ES-9L6V",
+    11: "WHC-CC-4P8W",
+    12: "WHC-HV-2K7X",
+    13: "WHC-MT-6Q5N",
+    14: "WHC-TE-8R3L"
+  },
+  assessmentPassCodesBySkillId: {
+    1: "WHC-A1-PASS-K2",
+    2: "WHC-A2-PASS-M4",
+    3: "WHC-A3-PASS-R7",
+    4: "WHC-A4-PASS-T3",
+    5: "WHC-A5-PASS-V6",
+    6: "WHC-A6-PASS-X8",
+    7: "WHC-A7-PASS-Q5",
+    8: "WHC-A8-PASS-N9",
+    9: "WHC-A9-PASS-L4",
+    10: "WHC-A10-PASS-P7",
+    11: "WHC-A11-PASS-Z3",
+    12: "WHC-A12-PASS-D8",
+    13: "WHC-A13-PASS-G6",
+    14: "WHC-A14-PASS-H5"
+  },
+  assessmentReworkCodesBySkillId: {
+    1: "WHC-A1-REWORK-K2",
+    2: "WHC-A2-REWORK-M4",
+    3: "WHC-A3-REWORK-R7",
+    4: "WHC-A4-REWORK-T3",
+    5: "WHC-A5-REWORK-V6",
+    6: "WHC-A6-REWORK-X8",
+    7: "WHC-A7-REWORK-Q5",
+    8: "WHC-A8-REWORK-N9",
+    9: "WHC-A9-REWORK-L4",
+    10: "WHC-A10-REWORK-P7",
+    11: "WHC-A11-REWORK-Z3",
+    12: "WHC-A12-REWORK-D8",
+    13: "WHC-A13-REWORK-G6",
+    14: "WHC-A14-REWORK-H5"
+  }
+};
