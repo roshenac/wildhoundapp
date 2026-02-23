@@ -183,7 +183,7 @@
               <div class="checklist">
                 <div class="muted">${(cfg.stages[4] || "").replace(/^Stage\s+\d+\s*-\s*/i, "")}</div>
                 ${stage4Passed ? `<div class="muted"><strong>${skill.name} passed assessment.</strong></div>` : ""}
-                ${unlocked ? `
+                ${unlocked && !stage4Passed ? `
                   <div class="btn-row" style="margin-top: 6px;">
                     <button class="btn-secondary" type="button" data-action="open-assessment-booking">Book In For Assessment</button>
                     <button class="btn-secondary" type="button" data-action="focus-assessor-code">Enter Assessor Code</button>

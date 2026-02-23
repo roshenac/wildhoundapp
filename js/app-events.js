@@ -462,8 +462,6 @@
         const stageSourceKey = `stage-complete:${skillId}:${step}`;
         if (!wasComplete && isCompleteNow) {
           awardEvent("pass_stage", { sourceKey: stageSourceKey, uniqueSource: true });
-        } else if (wasComplete && !isCompleteNow) {
-          removePointsHistoryBySourceKeys([stageSourceKey]);
         }
       }
       syncSkillProgressFromSteps(skillId);
@@ -483,7 +481,6 @@
         awardEvent("master_skill", { sourceKey: masterySourceKey, uniqueSource: true });
       } else {
         delete state.stage5StretchDoneBySkill[skill.id];
-        removePointsHistoryBySourceKeys([masterySourceKey]);
       }
       renderSkills();
       renderSkillDetail();

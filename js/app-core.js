@@ -7,6 +7,7 @@
       rankBonusesAwarded: { bronze: false, silver: false, gold: false },
       completionMilestonesAwarded: { three: false, seven: false, all: false },
       awardedEvents: {},
+      awardedSourceKeys: {},
       skillEvidenceSubmitted: {},
       skillAssessmentsPassed: {},
       assessmentDiscountBySkill: {},
@@ -103,7 +104,7 @@
           const saved = JSON.parse(raw);
           const keys = [
             "user", "points", "selectedSkillId", "practicePanelOpen", "bookingFilters",
-            "rankBonusesAwarded", "completionMilestonesAwarded", "awardedEvents",
+            "rankBonusesAwarded", "completionMilestonesAwarded", "awardedEvents", "awardedSourceKeys",
             "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
             "claimedRewards", "rewardClaimDetails",
             "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
@@ -160,6 +161,7 @@
           rankBonusesAwarded: state.rankBonusesAwarded,
           completionMilestonesAwarded: state.completionMilestonesAwarded,
           awardedEvents: state.awardedEvents,
+          awardedSourceKeys: state.awardedSourceKeys,
           skillEvidenceSubmitted: state.skillEvidenceSubmitted,
           skillAssessmentsPassed: state.skillAssessmentsPassed,
           assessmentDiscountBySkill: state.assessmentDiscountBySkill,
@@ -772,6 +774,7 @@
 
       if (rule.oneTime && state.awardedEvents[eventKey]) return false;
       if (options.uniqueSource && sourceKey) {
+        if (state.awardedSourceKeys && state.awardedSourceKeys[sourceKey]) return false;
         const exists = (state.pointsHistory || []).some((entry) => entry && entry.sourceKey === sourceKey);
         if (exists) return false;
       }
@@ -793,6 +796,10 @@
       });
       showToast(`+${appliedPoints} pts: ${rule.label}`);
       if (rule.oneTime) state.awardedEvents[eventKey] = true;
+      if (options.uniqueSource && sourceKey) {
+        if (!state.awardedSourceKeys || typeof state.awardedSourceKeys !== "object") state.awardedSourceKeys = {};
+        state.awardedSourceKeys[sourceKey] = true;
+      }
       if (eventKey === "pass_skill_assessment" && options.skillId) state.skillAssessmentsPassed[options.skillId] = true;
 
       applyAutoMilestones();
