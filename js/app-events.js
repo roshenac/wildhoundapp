@@ -285,7 +285,13 @@
             walk.status = "booked";
             walk.paymentStatus = "unpaid";
             walk.bookingPointHistoryIds = walk.bookingPointHistoryIds || [];
-            const attendanceAwardId = awardEvent("walk_attendance", { sourceKey: `booking:hillwalk:${walk.id}` });
+            const walkLabel = walk.month
+              ? `Attend Monthly Walk - ${walk.month}`
+              : `Attend Monthly Walk - ${walk.day || "Upcoming Walk"}`;
+            const attendanceAwardId = awardEvent("walk_attendance", {
+              sourceKey: `booking:hillwalk:${walk.id}`,
+              label: walkLabel
+            });
             if (attendanceAwardId) walk.bookingPointHistoryIds.push(attendanceAwardId);
             showToast("Hill walk booked. Attendance logged.");
             trackAnalytics("booking_booked_hillwalk", { eventId: walk.id });

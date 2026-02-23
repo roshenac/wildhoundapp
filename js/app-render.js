@@ -530,6 +530,38 @@
       const formatHistoryLabel = (item) => {
         const base = String(item && item.label ? item.label : "Points Event");
         const skillName = resolveSkillNameFromSourceKey(item && item.sourceKey);
+        const sourceKey = String((item && item.sourceKey) || "");
+        const isWalkAttendance = /attend monthly walk/i.test(base);
+        const parseMonthFromWhen = (whenText) => {
+          const raw = String(whenText || "").trim();
+          if (!raw) return "";
+          const direct = new Date(raw);
+          if (!Number.isNaN(direct.getTime())) {
+            return direct.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+          }
+          const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+          if (!m) return "";
+          const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+          if (Number.isNaN(d.getTime())) return "";
+          return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+        };
+        const walkMatch = sourceKey.match(/^booking:hillwalk:(\d+)$/);
+        if (walkMatch) {
+          const walkId = Number(walkMatch[1]);
+          const walk = (state.monthlyWalks || []).find((w) => Number(w.id) === walkId);
+          if (walk) {
+            const monthText = walk.month || walk.day || "";
+            if (monthText && !base.toLowerCase().includes(monthText.toLowerCase())) {
+              return `${base} - ${monthText}`;
+            }
+          }
+        }
+        if (isWalkAttendance) {
+          const monthText = parseMonthFromWhen(item && item.when);
+          if (monthText && !base.toLowerCase().includes(monthText.toLowerCase())) {
+            return `${base} - ${monthText}`;
+          }
+        }
         if (!skillName) return base;
         if (base.toLowerCase().includes(skillName.toLowerCase())) return base;
         return `${base} - ${skillName}`;
