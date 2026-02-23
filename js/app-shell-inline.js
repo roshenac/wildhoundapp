@@ -436,7 +436,7 @@ window.WH_APP_SHELL = `
         <div class="btn-row">
           <button type="button" class="btn-secondary" id="aboutExportDataBtn">Export My Data</button>
           <button type="button" class="btn-secondary" id="aboutImportDataBtn">Import Backup</button>
-          <button type="button" class="btn-secondary" id="aboutValidateDataBtn">Check Backup File</button>
+          <button type="button" class="btn-secondary" id="aboutValidateDataBtn">Check Backup File Is Valid</button>
           <input type="file" id="aboutImportDataFile" accept="application/json,.json" style="display:none" />
           <input type="file" id="aboutValidateDataFile" accept="application/json,.json" style="display:none" />
         </div>

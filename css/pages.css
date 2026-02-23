@@ -211,7 +211,7 @@
     .toast-wrap {
       position: fixed;
       right: 14px;
-      top: 14px;
+      bottom: calc(72px + env(safe-area-inset-bottom));
       z-index: 50;
       display: grid;
       gap: 8px;
