@@ -154,6 +154,21 @@
       if (!skill || !skill.unlocked) return;
       state.practicePanelOpen = !state.practicePanelOpen;
       renderSkillDetail();
+      if (state.practicePanelOpen) {
+        requestAnimationFrame(() => {
+          const form = document.getElementById("practiceForm");
+          const panel = document.getElementById("practiceLogPanel");
+          const focusTarget = document.getElementById("practiceDate") || form;
+          if (form && typeof form.scrollIntoView === "function") {
+            form.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else if (panel && typeof panel.scrollIntoView === "function") {
+            panel.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          if (focusTarget && typeof focusTarget.focus === "function") {
+            focusTarget.focus({ preventScroll: true });
+          }
+        });
+      }
       persistState();
     });
     document.getElementById("closePracticePanelBtn").addEventListener("click", () => {
