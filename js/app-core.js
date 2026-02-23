@@ -19,8 +19,11 @@
       logSelectionMode: false,
       selectedLogIds: {},
       logEditContext: null,
+      rewardClaimContext: null,
       bookingOverrides: {},
       pointsHistory: [],
+      claimedRewards: {},
+      rewardClaimDetails: {},
       toasts: [],
       bookedSlotIds: [],
       passedSlotIds: [],
@@ -53,41 +56,13 @@
     };
 
     const POINT_RULES = {
-      core: [
-        { key: "walk_attendance", label: "Walk Attendance", points: 12 },
-        { key: "unlock_skill_walk", label: "Unlock Skill (via walk)", points: 24 },
-        { key: "unlock_skill_purchase", label: "Unlock Skill (via purchase)", points: 16 },
-        { key: "submit_skill_evidence", label: "Submit Skill Evidence (once per skill)", points: 18, oncePerSkill: true },
-        { key: "pass_skill_assessment", label: "Pass Skill Assessment", points: 30, oncePerSkill: true },
-        { key: "complete_3_skills", label: "Complete 3 Skills (Milestone Bonus)", points: 40, oneTime: true },
-        { key: "complete_7_skills", label: "Complete 7 Skills (Mid Milestone Bonus)", points: 75, oneTime: true },
-        { key: "complete_all_skills", label: "Complete All 14 Skills (Master Bonus)", points: 160, oneTime: true },
-        { key: "attend_skill_testing_day", label: "Attend Skill Testing Day", points: 14 },
-        { key: "pass_bronze_rank", label: "Pass Trail Dog Pathfinder Rank", points: 30, oneTime: true },
-        { key: "pass_silver_rank", label: "Pass Trail Dog Expert Rank", points: 55, oneTime: true },
-        { key: "pass_gold_rank", label: "Pass Trail Dog Master Rank", points: 90, oneTime: true }
-      ],
-      engagement: [
-        { key: "attend_3_walks_season", label: "Attend 3 Walks in a Season", points: 22, oneTime: true },
-        { key: "attend_5_walks_total", label: "Attend 5 Walks Total", points: 35, oneTime: true },
-        { key: "attend_first_walk", label: "Attend First Walk Ever (Welcome Bonus)", points: 20, oneTime: true },
-        { key: "book_walk_early", label: "Book Walk Early (14+ days)", points: 10 },
-        { key: "complete_2_skills_consecutive_months", label: "Complete 2 Skills in Consecutive Months", points: 30, oneTime: true },
-        { key: "submit_reflection_after_walk", label: "Submit Reflection After Walk (1 per walk)", points: 8 },
-        { key: "help_at_walk", label: "Help at a Walk (Gate/Demo/Support)", points: 18 },
-        { key: "trail_etiquette_recognition", label: "Trail Etiquette Recognition", points: 15 }
-      ],
-      growth: [
-        { key: "share_certificate_social", label: "Share Certificate on Social Media", points: 12, oneTime: true },
-        { key: "bring_new_dog_walk", label: "Bring a New Dog to a Walk", points: 28 },
-        { key: "leave_testimonial", label: "Leave a Testimonial", points: 14, oneTime: true }
-      ],
-      bonus: [
-        { key: "seasonal_challenge_completion", label: "Seasonal Challenge Completion", points: 28 },
-        { key: "surprise_bonus_walk", label: "Surprise Bonus Awarded at Walk", points: 10 },
-        { key: "complete_skill_of_month", label: "Complete Skill of the Month", points: 22 },
-        { key: "attend_special_event", label: "Attend Special Event / Guest Trainer Day", points: 26 },
-        { key: "community_poll_vote", label: "Participate in Community Poll / Vote", points: 3 }
+      simple: [
+        { key: "unlock_skill", label: "Unlock Skill", points: 10 },
+        { key: "pass_stage", label: "Pass Stage 1-3", points: 5 },
+        { key: "pass_skill_assessment", label: "Pass Skill (Stage 4 Assessment)", points: 20, oncePerSkill: true },
+        { key: "master_skill", label: "Master Skill (Stage 5 Stretch Goal)", points: 8 },
+        { key: "walk_attendance", label: "Attend Monthly Walk", points: 12 },
+        { key: "log_training", label: "Log Training Session", points: 2 }
       ]
     };
 
@@ -108,6 +83,9 @@
       : "events.json";
     const REMOTE_EVENTS_REFRESH_MS = 5 * 60 * 1000;
     const REMOTE_ASSESSMENT_RESET_APPLIED_KEY = "wildhound_assessment_reset_applied";
+    const REWARD_CLAIM_TALLY_URL = (typeof window !== "undefined" && window.WH_TALLY_REWARD_FORM_URL)
+      ? String(window.WH_TALLY_REWARD_FORM_URL)
+      : "https://tally.so/r/rj69o2";
     // Set to `true` to require installed-app mode, or `false` to allow normal browser use.
     const ENFORCE_INSTALL_GATE = true;
     let deferredInstallPrompt = null;
@@ -122,6 +100,7 @@
             "user", "points", "selectedSkillId", "practicePanelOpen", "bookingFilters",
             "rankBonusesAwarded", "completionMilestonesAwarded", "awardedEvents",
             "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
+            "claimedRewards", "rewardClaimDetails",
             "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
             "loggedSkillLimits", "loggedDateLimit", "loggedViewMode"
           ];
@@ -184,6 +163,8 @@
           skillStepChecks: state.skillStepChecks,
           bookingOverrides: state.bookingOverrides,
           pointsHistory: state.pointsHistory,
+          claimedRewards: state.claimedRewards,
+          rewardClaimDetails: state.rewardClaimDetails,
           bookedSlotIds: state.bookedSlotIds,
           passedSlotIds: state.passedSlotIds,
           practiceLogs: state.practiceLogs,
@@ -689,13 +670,13 @@
     };
 
     function getRank(points) {
-      if (points >= 1300 && hasMasterRequirements()) return { name: "Trail Dog Master", min: 1300, next: null, nextName: null };
-      if (points >= 900) return { name: "Trail Dog Expert", min: 900, next: 1300, nextName: "Trail Dog Master" };
-      if (points >= 600) return { name: "Trail Dog Pathfinder", min: 600, next: 900, nextName: "Trail Dog Expert" };
-      if (points >= 500) return { name: "Trail Dog Advanced", min: 500, next: 600, nextName: "Trail Dog Pathfinder" };
-      if (points >= 250) return { name: "Trail Dog Explorer", min: 250, next: 500, nextName: "Trail Dog Advanced" };
-      if (points >= 100) return { name: "Trail Dog Rookie", min: 100, next: 250, nextName: "Trail Dog Explorer" };
-      return { name: "Trail Dog Starter", min: 0, next: 100, nextName: "Trail Dog Rookie" };
+      if (points >= 1250 && hasMasterRequirements()) return { name: "Trail Dog Master", min: 1250, next: null, nextName: null };
+      if (points >= 950) return { name: "Trail Dog Expert", min: 950, next: 1250, nextName: "Trail Dog Master" };
+      if (points >= 700) return { name: "Trail Dog Pathfinder", min: 700, next: 950, nextName: "Trail Dog Expert" };
+      if (points >= 500) return { name: "Trail Dog Advanced", min: 500, next: 700, nextName: "Trail Dog Pathfinder" };
+      if (points >= 300) return { name: "Trail Dog Explorer", min: 300, next: 500, nextName: "Trail Dog Advanced" };
+      if (points >= 150) return { name: "Trail Dog Rookie", min: 150, next: 300, nextName: "Trail Dog Explorer" };
+      return { name: "Trail Dog Starter", min: 0, next: 150, nextName: "Trail Dog Rookie" };
     }
 
     function nextSkillToUnlock() {
@@ -738,8 +719,8 @@
       let points = Number(value);
       if (!Number.isFinite(points)) points = 0;
       points = Math.max(0, Math.round(points));
-      if (!hasMasterRequirements() && points > 1299) points = 1299;
-      if (points > 1300) points = 1300;
+      if (!hasMasterRequirements() && points > 1249) points = 1249;
+      if (points > 1250) points = 1250;
       return points;
     }
 
@@ -780,12 +761,16 @@
     function awardEvent(eventKey, options = {}) {
       const rule = POINT_MAP[eventKey];
       if (!rule) return false;
+      const sourceKey = options.sourceKey || null;
 
       if (rule.oneTime && state.awardedEvents[eventKey]) return false;
+      if (options.uniqueSource && sourceKey) {
+        const exists = (state.pointsHistory || []).some((entry) => entry && entry.sourceKey === sourceKey);
+        if (exists) return false;
+      }
       if (rule.oncePerSkill) {
         const skillId = options.skillId;
         if (!skillId) return false;
-        if (eventKey === "submit_skill_evidence" && state.skillEvidenceSubmitted[skillId]) return false;
         if (eventKey === "pass_skill_assessment" && state.skillAssessmentsPassed[skillId]) return false;
       }
 
@@ -797,17 +782,32 @@
         label: rule.label,
         points: appliedPoints,
         when: new Date().toLocaleString(),
-        sourceKey: options.sourceKey || null
+        sourceKey
       });
       showToast(`+${appliedPoints} pts: ${rule.label}`);
       if (rule.oneTime) state.awardedEvents[eventKey] = true;
-      if (eventKey === "submit_skill_evidence" && options.skillId) state.skillEvidenceSubmitted[options.skillId] = true;
       if (eventKey === "pass_skill_assessment" && options.skillId) state.skillAssessmentsPassed[options.skillId] = true;
 
       applyAutoMilestones();
       applyAutoRankBonuses();
       renderAll();
       return historyId;
+    }
+
+    function removePointsHistoryBySourceKeys(sourceKeys) {
+      if (!Array.isArray(sourceKeys) || !sourceKeys.length) return 0;
+      const keySet = new Set(sourceKeys.filter(Boolean).map(String));
+      if (!keySet.size) return 0;
+      let removedPoints = 0;
+      state.pointsHistory = state.pointsHistory.filter((entry) => {
+        if (entry && entry.sourceKey && keySet.has(String(entry.sourceKey))) {
+          removedPoints += Number(entry.points) || 0;
+          return false;
+        }
+        return true;
+      });
+      if (removedPoints > 0) recalculatePointsFromHistory({ strict: true });
+      return removedPoints;
     }
 
     function removePointsHistoryByIds(historyIds) {
@@ -841,36 +841,9 @@
       return removePointsHistoryByIds([log.pointHistoryId]);
     }
 
-    function applyAutoMilestones() {
-      const completed = Object.keys(state.skillAssessmentsPassed).length;
-      if (completed >= 3 && !state.completionMilestonesAwarded.three) {
-        state.completionMilestonesAwarded.three = true;
-        awardEvent("complete_3_skills");
-      }
-      if (completed >= 7 && !state.completionMilestonesAwarded.seven) {
-        state.completionMilestonesAwarded.seven = true;
-        awardEvent("complete_7_skills");
-      }
-      if (completed >= 14 && !state.completionMilestonesAwarded.all) {
-        state.completionMilestonesAwarded.all = true;
-        awardEvent("complete_all_skills");
-      }
-    }
+    function applyAutoMilestones() {}
 
-    function applyAutoRankBonuses() {
-      if (state.points >= 600 && !state.rankBonusesAwarded.bronze) {
-        state.rankBonusesAwarded.bronze = true;
-        awardEvent("pass_bronze_rank");
-      }
-      if (state.points >= 900 && !state.rankBonusesAwarded.silver) {
-        state.rankBonusesAwarded.silver = true;
-        awardEvent("pass_silver_rank");
-      }
-      if (state.points >= 1300 && hasMasterRequirements() && !state.rankBonusesAwarded.gold) {
-        state.rankBonusesAwarded.gold = true;
-        awardEvent("pass_gold_rank");
-      }
-    }
+    function applyAutoRankBonuses() {}
 
     function unlockSkill(skillId, source = "walk") {
       const skill = state.skills.find(s => s.id === skillId);
@@ -880,7 +853,7 @@
         return;
       }
       skill.unlocked = true;
-      awardEvent(source === "purchase" ? "unlock_skill_purchase" : "unlock_skill_walk");
+      awardEvent("unlock_skill");
       showToast(`Unlocked: ${skill.name}`);
       if (!state.selectedSkillId) state.selectedSkillId = skillId;
     }

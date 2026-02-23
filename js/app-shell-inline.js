@@ -190,6 +190,7 @@ window.WH_APP_SHELL = `
         <p class="reward-kicker">Trail Reward Journey</p>
         <p class="reward-points"><span id="rewardPoints">0</span> pts</p>
         <p class="muted" id="nextRewardText">Next reward in 0 points.</p>
+        <p class="muted" id="currentRankBadgeText">Digital Badge: Not unlocked yet</p>
         <div class="progress-wrap" style="margin-top: 12px;">
           <div class="progress-text">
             <span id="rewardJourneyLabel">Progress to next reward</span>
@@ -205,15 +206,17 @@ window.WH_APP_SHELL = `
       <details class="card collapse-card" open>
         <summary>Milestone Rewards</summary>
         <p class="muted">Higher tiers now include gear, recognition, and premium trail experiences.</p>
+        <p class="muted"><strong>Reward delivery:</strong> Physical rewards are currently available to UK residents only. Non-UK members receive certificates as digital email versions.</p>
         <div class="ladder" id="rewardsLadder">
-          <div class="step" data-threshold="100">Trail Dog Rookie (100 pts) - Sticker</div>
-          <div class="step" data-threshold="250">Trail Dog Explorer (250 pts) - Patch</div>
-          <div class="step" data-threshold="500">Trail Dog Advanced (500 pts) - Mug</div>
-          <div class="step" data-threshold="600">Trail Dog Pathfinder (600 pts) - Personalized Trail Tag + Certificate</div>
-          <div class="step" data-threshold="900">Trail Dog Expert (900 pts) - Pro Gear Bundle + Club Spotlight</div>
-          <div class="step" data-threshold="1300">Trail Dog Master (1300 pts) - Master Trophy + 1:1 Assessment Day + Certificate</div>
-          <div class="step" data-kind="walks-attended" data-walks="10">Attend 10 Walks - Trail Commitment Crate (Bandana + Treat Pouch)</div>
-          <div class="step" data-kind="all-skills-pass">All 14 Skills Passed - Skills Mastery Medal + Hall of Fame Feature</div>
+          <div class="step" data-threshold="75">Trail Starter (75 pts) - Digital Badge + App Title</div>
+          <div class="step" data-threshold="150">Trail Dog Rookie (150 pts) - Digital Badge + Sticker</div>
+          <div class="step" data-threshold="300">Trail Dog Explorer (300 pts) - Digital Badge + Mug</div>
+          <div class="step" data-threshold="500">Trail Dog Advanced (500 pts) - Digital Badge + Wild Hound Club Dog Bandana</div>
+          <div class="step" data-threshold="700">Trail Dog Pathfinder (700 pts) - Digital Badge + Wild Hound Club Beanie + Certificate</div>
+          <div class="step" data-threshold="950">Trail Dog Expert (950 pts) - Digital Badge + Wild Hound Club Hoodie + Certificate</div>
+          <div class="step" data-threshold="1250">Trail Dog Master (1250 pts) - Digital Badge + £100 Training Voucher + Certificate</div>
+          <div class="step" data-kind="walks-attended" data-walks="10">Attend 10 Walks - Trail Commitment Pack (Digital Badge + Priority Booking Window)</div>
+          <div class="step" data-kind="all-skills-pass">All 14 Skills Passed - Skills Mastery Bundle (Champion Rosette + Priority Booking Window)</div>
         </div>
       </details>
 
@@ -302,61 +305,112 @@ window.WH_APP_SHELL = `
         </div>
       </details>
 
+      <details class="card collapse-card" open>
+        <summary>What Wild Hound Is</summary>
+        <ul class="guide-list">
+          <li>Wild Hound is a progression app for outdoor dog owners.</li>
+          <li>Track skill development, book events, log practice, and build points over time.</li>
+          <li>Your dashboard gives quick access to rank, points, monthly skill, and activity status.</li>
+        </ul>
+      </details>
+
+      <details class="card collapse-card" open>
+        <summary>How Progression Works</summary>
+        <ol class="guide-list">
+          <li>Unlock a skill using a hill walk code or payment.</li>
+          <li>Complete Stage 1 to Stage 3 practice criteria in order.</li>
+          <li>At Stage 4, book assessment and apply assessor code.</li>
+          <li>Your assessor records one of two outcomes at Stage 4: Passed, or Needs More Work (with discount support until pass).</li>
+          <li>Stage 5 Stretch Goal unlocks only after Stage 4 is passed.</li>
+        </ol>
+      </details>
+
+      <details class="card collapse-card">
+        <summary>Monthly Skill Rotation</summary>
+        <ul class="guide-list">
+          <li>Monthly Skill rotates through skills 1 to 13 (Trail Etiquette Pro is excluded).</li>
+          <li>Rotation starts with skill 1 in March 2026.</li>
+          <li>Dashboard Monthly Skill card opens the skill detail (or unlock options if still locked).</li>
+        </ul>
+      </details>
+
+      <details class="card collapse-card">
+        <summary>Unlocking Rules</summary>
+        <ul class="guide-list">
+          <li>Skills can be unlocked via hill walk code or purchase flow.</li>
+          <li><strong>Trail Etiquette Pro</strong> only unlocks after skills 1 to 13 are all passed.</li>
+          <li>Unlocked skills are color-coded by status across Dashboard and Skills tabs.</li>
+        </ul>
+      </details>
+
+      <details class="card collapse-card">
+        <summary>Booking & Payments</summary>
+        <ul class="guide-list">
+          <li>Assessments and monthly walks are shown in chronological order.</li>
+          <li>Dashboard booking stats are clickable shortcuts to filtered booking views.</li>
+          <li>Booking and canceling adjusts related points based on your event history.</li>
+          <li>Payment opens Stripe checkout for skill unlocks, walks, and assessments.</li>
+        </ul>
+      </details>
+
+      <details class="card collapse-card">
+        <summary>Logs & Tracking</summary>
+        <ul class="guide-list">
+          <li>Log practice with skill, stage, date, duration, and notes.</li>
+          <li>Edit and delete single logs or multi-select delete in Logged Skills.</li>
+          <li>View logs grouped by skill or by date (month/year grouped).</li>
+        </ul>
+      </details>
+
       <details class="card collapse-card">
         <summary>How Points Are Earned</summary>
         <div id="pointsRuleSummary" class="muted" style="margin-top: 8px;"></div>
       </details>
 
-      <details class="card collapse-card" open>
-        <summary>How Wild Hound Works</summary>
-        <ol class="guide-list">
-          <li>Unlock skills from the Skills screen using a hill walk code or payment.</li>
-          <li>Open an unlocked skill and complete Stages 1 to 3.</li>
-          <li>At Stage 4, book an assessment and enter assessor code to mark Passed or Needs More Work.</li>
-          <li>Stage 5 Stretch Goal unlocks only after Stage 4 is passed.</li>
-          <li>Book assessments and monthly walks from Booking and keep climbing points.</li>
-        </ol>
-      </details>
-
       <details class="card collapse-card">
-        <summary>Unlocking Skills</summary>
+        <summary>How Reward Claims Work</summary>
         <ul class="guide-list">
-          <li><strong>Hill walk code:</strong> tap Unlock Skill and enter your code.</li>
-          <li><strong>Payment:</strong> tap Unlock Skill and go to payment page.</li>
-          <li>Only unlocked skills can be opened and progressed.</li>
+          <li>Your points are lifetime progression points and are not spent when you claim a reward.</li>
+          <li>When you reach a milestone, that reward can be claimed once.</li>
+          <li>You can continue progressing and claim higher rewards in order as your points grow.</li>
         </ul>
       </details>
 
       <details class="card collapse-card">
-        <summary>Booking Walks & Assessments</summary>
+        <summary>Reward Eligibility</summary>
         <ul class="guide-list">
-          <li>Assessments and monthly hill walks are shown together in chronological order.</li>
-          <li>Each hill walk shows the linked skill focus.</li>
-          <li>After booking, you can pay from the event card.</li>
-          <li>Canceling a booking removes its related booking points.</li>
+          <li>Physical rewards are currently for UK residents only.</li>
+          <li>If you are outside the UK, certificates may be sent in digital form by email.</li>
+          <li>Merch rewards include Wild Hound Club bandana, beanie, and hoodie tiers.</li>
         </ul>
       </details>
 
       <details class="card collapse-card">
-        <summary>Progression Rules</summary>
+        <summary>Training Voucher (Master Reward)</summary>
         <ul class="guide-list">
-          <li>Stage 2 unlocks after Stage 1 is complete, and so on.</li>
-          <li>Stage 4 is assessment pass criteria (not a checkbox stage).</li>
-          <li><strong>PASS5</strong> marks skill as passed.</li>
-          <li><strong>REWORK5</strong> marks needs more work and applies £5 assessment discount until passed.</li>
-          <li>Stage 5 is hidden until the skill is passed.</li>
+          <li>The Trail Dog Master reward includes a <strong>£100 training voucher</strong>.</li>
+          <li>The voucher can be used with affiliated trainers, including selected sessions such as scent work classes, sheep training, or other eligible specialist workshops.</li>
+          <li>Voucher use is subject to class availability, booking windows, and any stated expiry terms at issue date.</li>
         </ul>
       </details>
 
       <details class="card collapse-card">
-        <summary>What Is Not Rewarded</summary>
+        <summary>Data, Sync & Devices</summary>
         <ul class="guide-list">
-          <li>Unlimited evidence submissions</li>
-          <li>Daily logging spam</li>
-          <li>Chat comments</li>
-          <li>Passive activity</li>
+          <li>Your profile name, progress, and logs are saved on your device.</li>
+          <li>Upcoming events and booking availability update automatically in the app.</li>
+          <li>If you change phone or clear browser/app data, local progress may reset.</li>
         </ul>
       </details>
+
+      <details class="card collapse-card">
+        <summary>Contact Us</summary>
+        <p class="muted">Need help with rewards, bookings, or your account?</p>
+        <div class="btn-row">
+          <a class="btn-secondary" href="mailto:wildhoundclub@hotmail.com">Email wildhoundclub@hotmail.com</a>
+        </div>
+      </details>
+
     </section>
   </main>
 </div>
@@ -432,6 +486,28 @@ window.WH_APP_SHELL = `
         <button type="button" class="btn-primary" id="unlockCodeSubmitBtn">Unlock with Code</button>
         <button type="button" class="btn-secondary" id="unlockCodeCancelBtn">Back</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="rewardClaimModalBackdrop">
+  <div class="modal">
+    <h3>Claim Reward</h3>
+    <p class="muted" id="rewardClaimPrompt">Complete the embedded claim form below.</p>
+    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 10px;">
+      <iframe
+        id="rewardClaimFrame"
+        title="Reward claim form"
+        src="about:blank"
+        style="width: 100%; min-height: 520px; border: 0; background: #fffdf8;"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+      ></iframe>
+    </div>
+    <div class="btn-row" style="margin-top: 0;">
+      <button type="button" class="btn-primary" id="rewardClaimSubmittedBtn">I've Submitted Form</button>
+      <button type="button" class="btn-secondary" id="rewardClaimOpenTabBtn">Open in New Tab</button>
+      <button type="button" class="btn-secondary" id="rewardClaimCancelBtn">Close</button>
     </div>
   </div>
 </div>

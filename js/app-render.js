@@ -25,7 +25,7 @@
       document.getElementById("progressLabel").textContent = nextRank
         ? `${Math.max(0, nextRank - state.points)} pts to ${rank.nextName}`
         : "Top level achieved";
-      if (rank.nextName === "Trail Dog Master" && state.points >= 1299 && !hasMasterRequirements()) {
+      if (rank.nextName === "Trail Dog Master" && state.points >= 1249 && !hasMasterRequirements()) {
         document.getElementById("progressLabel").textContent = `Master unlock needs ${skillsNeededForMaster} skills + ${walksNeededForMaster} walks`;
       }
 
@@ -304,12 +304,13 @@
     function renderRewards() {
       document.getElementById("rewardPoints").textContent = state.points;
       const rewardMilestones = [
-        { threshold: 100, label: "Trail Dog Rookie" },
-        { threshold: 250, label: "Trail Dog Explorer" },
+        { threshold: 75, label: "Trail Starter" },
+        { threshold: 150, label: "Trail Dog Rookie" },
+        { threshold: 300, label: "Trail Dog Explorer" },
         { threshold: 500, label: "Trail Dog Advanced" },
-        { threshold: 600, label: "Trail Dog Pathfinder" },
-        { threshold: 900, label: "Trail Dog Expert" },
-        { threshold: 1300, label: "Trail Dog Master" }
+        { threshold: 700, label: "Trail Dog Pathfinder" },
+        { threshold: 950, label: "Trail Dog Expert" },
+        { threshold: 1250, label: "Trail Dog Master" }
       ];
       const prev = rewardMilestones.filter(r => state.points >= r.threshold).pop() || { threshold: 0, label: "Start" };
       const next = rewardMilestones.find(r => state.points < r.threshold);
@@ -324,35 +325,86 @@
       document.getElementById("nextRewardText").textContent = next
         ? `${Math.max(0, next.threshold - state.points)} pts to reach ${next.label}`
         : "You unlocked every reward tier. Keep climbing.";
+      const currentBadgeText = prev.threshold > 0
+        ? `Digital Badge Earned: ${prev.label}`
+        : "Digital Badge: Not unlocked yet";
+      const badgeEl = document.getElementById("currentRankBadgeText");
+      if (badgeEl) badgeEl.textContent = currentBadgeText;
       if (!next && !hasMasterRequirements()) {
         const skillsNeeded = Math.max(0, 14 - unlockedSkills().length);
         const walksNeeded = Math.max(0, 5 - walksAttendedCount());
         document.getElementById("nextRewardText").textContent = `Master requires ${skillsNeeded} more skills and ${walksNeeded} more walks`;
       }
 
-      const formatRules = (title, rules) => {
-        const items = rules.map(rule => `${rule.label}: +${rule.points}`).join("<br>");
-        return `<strong>${title}</strong><br>${items}`;
-      };
-      document.getElementById("pointsRuleSummary").innerHTML = [
-        formatRules("CORE PROGRESSION", POINT_RULES.core),
-        formatRules("ENGAGEMENT", POINT_RULES.engagement),
-        formatRules("GROWTH & COMMUNITY", POINT_RULES.growth),
-        formatRules("BONUS / SEASONAL", POINT_RULES.bonus),
-        `<strong>Not Rewarded:</strong> Unlimited evidence, daily logging, chat comments, passive activity`
-      ].join("<br><br>");
+      const groups = Object.entries(POINT_RULES || {});
+      const formatGroupTitle = (key) => key.replace(/_/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase());
+      document.getElementById("pointsRuleSummary").innerHTML = groups.map(([groupKey, rules]) => {
+        const items = (rules || []).map(rule => `${rule.label}: +${rule.points}`).join("<br>");
+        return `<strong>${formatGroupTitle(groupKey)}</strong><br>${items}`;
+      }).concat([
+        `<strong>Log Safeguard</strong><br>Training log points are removed if that log is deleted within 14 days.`
+      ]).join("<br><br>");
 
-      document.querySelectorAll("#rewardsLadder .step").forEach(step => {
+      document.querySelectorAll("#rewardsLadder .step").forEach((step, index) => {
         const kind = step.getAttribute("data-kind");
         const threshold = Number(step.getAttribute("data-threshold"));
         const walkGoal = Number(step.getAttribute("data-walks"));
-        const isMasterStep = threshold === 1300;
+        const isMasterStep = threshold === 1250;
         const reached = kind === "all-skills-pass"
           ? Object.keys(state.skillAssessmentsPassed).length >= 14
           : kind === "walks-attended"
             ? walksAttendedCount() >= walkGoal
           : (isMasterStep ? (state.points >= threshold && hasMasterRequirements()) : state.points >= threshold);
         step.classList.toggle("reached", reached);
+
+        const fallbackBase = step.getAttribute("data-base-label") || step.textContent.trim();
+        step.setAttribute("data-base-label", fallbackBase);
+        const rewardKey = kind
+          ? `${kind}:${kind === "walks-attended" ? walkGoal : "all"}`
+          : `threshold:${threshold || index}`;
+        step.setAttribute("data-reward-key", rewardKey);
+        step.setAttribute("data-reward-label", fallbackBase);
+        step.setAttribute("data-claimable", reached ? "true" : "false");
+        const isTrailStarter = !kind && threshold === 75;
+        const claimDetails = (state.rewardClaimDetails || {})[rewardKey];
+        const hasSubmittedClaimDetails = Boolean(
+          claimDetails
+          && claimDetails.submittedViaTally === true
+        ) || Boolean(
+          claimDetails
+          && String(claimDetails.fullName || "").trim()
+          && (
+            (typeof claimDetails.address === "string" && String(claimDetails.address).trim())
+            || (
+              claimDetails.address
+              && String(claimDetails.address.line1 || "").trim()
+              && String(claimDetails.address.city || "").trim()
+              && String(claimDetails.address.postcode || "").trim()
+              && String(claimDetails.address.country || "").trim()
+            )
+          )
+        );
+        const claimed = Boolean((state.claimedRewards || {})[rewardKey]) && hasSubmittedClaimDetails;
+        const btnText = claimed ? "Claimed" : (reached ? "Claim Reward" : "Locked");
+        const escapedLabel = fallbackBase
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+        const buttonHtml = isTrailStarter
+          ? `<span class="muted">${reached ? "Auto Unlocked" : "Locked"}</span>`
+          : `<button
+              type="button"
+              class="btn-secondary"
+              data-action="claim-reward"
+              data-reward-key="${rewardKey}"
+              ${(!reached || claimed) ? "disabled" : ""}
+            >${btnText}</button>`;
+        step.innerHTML = `
+          <div class="inline">
+            <span>${escapedLabel}</span>
+            ${buttonHtml}
+          </div>
+        `;
       });
 
       const history = document.getElementById("pointsHistoryList");
