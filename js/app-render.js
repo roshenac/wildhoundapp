@@ -389,12 +389,6 @@
         .sort((a, b) => parseDateTime(a.dateISO, a.time) - parseDateTime(b.dateISO, b.time)));
 
       let events = buildEvents(state.bookingFilters.type, state.bookingFilters.status);
-      if (!events.length && (state.bookingFilters.type !== "all" || state.bookingFilters.status !== "all")) {
-        state.bookingFilters = { type: "all", status: "all" };
-        if (typeFilter) typeFilter.value = "all";
-        if (statusFilter) statusFilter.value = "all";
-        events = buildEvents("all", "all");
-      }
 
       const wrap = document.getElementById("bookingEvents");
       if (!events.length) {
@@ -403,7 +397,8 @@
       }
       const now = Date.now();
       const toStatusText = (status) => (
-        status === "booked" ? "Booked"
+        status === "pending" ? "Not Booked"
+          : status === "booked" ? "Booked"
           : status === "waitlisted" ? "Waitlisted"
           : "Passed"
       );

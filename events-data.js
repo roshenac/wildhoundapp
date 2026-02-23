@@ -1,5 +1,5 @@
-{
-  "updatedAt": "2026-02-23T13:10:00Z",
+window.WH_EVENTS_DATA = {
+  "updatedAt": "2026-02-23T13:00:00Z",
   "clearAssessmentBookings": true,
   "slots": [],
   "monthlyWalks": [
@@ -108,4 +108,4 @@
       "waitlistCount": 0
     }
   ]
-}
+};
