@@ -50,6 +50,46 @@
       return { ok: true, message: "Backup file structure looks valid." };
     }
 
+    const PACKING_GUIDE_URL = "assets/Wild_Hound_Club_Trail-Ready_Dog_Starter_Guide.pdf";
+
+    function openPackingGuideModal() {
+      const frame = document.getElementById("packingGuideFrame");
+      const backdrop = document.getElementById("packingGuideModalBackdrop");
+      if (!(frame instanceof HTMLIFrameElement) || !(backdrop instanceof HTMLElement)) {
+        window.open(PACKING_GUIDE_URL, "_blank", "noopener,noreferrer");
+        return;
+      }
+      frame.src = `${PACKING_GUIDE_URL}#toolbar=0&navpanes=0`;
+      backdrop.style.display = "flex";
+    }
+
+    function closePackingGuideModal() {
+      const frame = document.getElementById("packingGuideFrame");
+      const backdrop = document.getElementById("packingGuideModalBackdrop");
+      if (frame instanceof HTMLIFrameElement) frame.src = "about:blank";
+      if (backdrop instanceof HTMLElement) backdrop.style.display = "none";
+    }
+
+    async function downloadPackingGuide() {
+      try {
+        const response = await fetch(PACKING_GUIDE_URL, { mode: "cors" });
+        if (!response.ok) throw new Error("Download failed");
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Wild_Hound_Club_Trail-Ready_Dog_Starter_Guide.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast("Packing guide download started.");
+      } catch (error) {
+        window.open(PACKING_GUIDE_URL, "_blank", "noopener,noreferrer");
+        showToast("Opened guide in a new tab.", "warn");
+      }
+    }
+
     document.addEventListener("click", (e) => {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
@@ -704,6 +744,38 @@
         if (backdrop) backdrop.style.display = "none";
       }
     });
+    const openPackingGuideBtn = document.getElementById("openPackingGuideBtn");
+    if (openPackingGuideBtn) {
+      openPackingGuideBtn.addEventListener("click", () => {
+        openPackingGuideModal();
+      });
+    }
+    const downloadPackingGuideBtn = document.getElementById("downloadPackingGuideBtn");
+    if (downloadPackingGuideBtn) {
+      downloadPackingGuideBtn.addEventListener("click", () => {
+        downloadPackingGuide();
+      });
+    }
+    const packingGuideDownloadFromModalBtn = document.getElementById("packingGuideDownloadFromModalBtn");
+    if (packingGuideDownloadFromModalBtn) {
+      packingGuideDownloadFromModalBtn.addEventListener("click", () => {
+        downloadPackingGuide();
+      });
+    }
+    const packingGuideCloseBtn = document.getElementById("packingGuideCloseBtn");
+    if (packingGuideCloseBtn) {
+      packingGuideCloseBtn.addEventListener("click", () => {
+        closePackingGuideModal();
+      });
+    }
+    const packingGuideModalBackdrop = document.getElementById("packingGuideModalBackdrop");
+    if (packingGuideModalBackdrop) {
+      packingGuideModalBackdrop.addEventListener("click", (e) => {
+        if (e.target && e.target.id === "packingGuideModalBackdrop") {
+          closePackingGuideModal();
+        }
+      });
+    }
     document.getElementById("aboutExportDataBtn").addEventListener("click", async () => {
       try {
         const passphrase = window.prompt("Optional: enter a backup passphrase (leave blank for none).", "") || "";

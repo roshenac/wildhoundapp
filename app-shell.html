@@ -31,7 +31,7 @@
 
   <main>
     <section class="screen active" id="dashboard">
-      <h1>Dashboard</h1>
+      <h1>Progress Overview</h1>
       <div class="glance-row">
         <span class="glance-chip" data-glance-rank>Rank: -</span>
         <span class="glance-chip" data-glance-points>Points: 0</span>
@@ -330,7 +330,8 @@
         <summary>Free Trail Packing Guide</summary>
         <p class="muted">Download the Trail-Ready Dog Starter Guide (PDF packing list).</p>
         <div class="btn-row">
-          <a class="btn-primary" href="https://dl.dropboxusercontent.com/scl/fi/8o96fvysdhv94dz4jczu3/Wild_Hound_Club_Trail-Ready_Dog_Starter_Guide.pdf?rlkey=dbtnhoxsv1hy1m5ttqctf0t7f&amp;st=yl8hnojm" target="_blank" rel="noopener noreferrer">Open Packing Guide</a>
+          <button type="button" class="btn-primary" id="openPackingGuideBtn">View Guide In App</button>
+          <button type="button" class="btn-secondary" id="downloadPackingGuideBtn">Download PDF</button>
         </div>
       </details>
 
@@ -558,6 +559,27 @@
       <button type="button" class="btn-primary" id="rewardClaimSubmittedBtn">I've Submitted Form</button>
       <button type="button" class="btn-secondary" id="rewardClaimOpenTabBtn">Open in New Tab</button>
       <button type="button" class="btn-secondary" id="rewardClaimCancelBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="packingGuideModalBackdrop">
+  <div class="modal">
+    <h3>Trail Packing Guide</h3>
+    <p class="muted">If the preview doesn't load on your device, use Download PDF.</p>
+    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 10px;">
+      <iframe
+        id="packingGuideFrame"
+        title="Wild Hound packing guide"
+        src="about:blank"
+        style="width: 100%; min-height: 72vh; border: 0; background: #fffdf8;"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+      ></iframe>
+    </div>
+    <div class="btn-row sticky-actions" style="margin-top: 0;">
+      <button type="button" class="btn-primary" id="packingGuideDownloadFromModalBtn">Download PDF</button>
+      <button type="button" class="btn-secondary" id="packingGuideCloseBtn">Close</button>
     </div>
   </div>
 </div>

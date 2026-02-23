@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'whc-v1.0.0';
+const CACHE_VERSION = 'whc-v1.0.1';
 const APP_SHELL_CACHE = `whc-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `whc-runtime-${CACHE_VERSION}`;
 
@@ -33,6 +33,8 @@ const APP_SHELL_ASSETS = [
   '/wildhoundapp/icon-192-v3.png',
   '/wildhoundapp/icon-512-v3.png',
   '/wildhoundapp/apple-touch-icon-v3.png'
+  ,
+  '/wildhoundapp/assets/Wild_Hound_Club_Trail-Ready_Dog_Starter_Guide.pdf'
 ];
 
 self.addEventListener('install', (event) => {
