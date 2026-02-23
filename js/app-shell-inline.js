@@ -145,11 +145,11 @@ window.WH_APP_SHELL = `
           <form id="practiceForm" class="form-grid">
             <label>
               Date
-              <input type="date" id="practiceDate" required />
+              <input type="date" id="practiceDate" autocomplete="off" required />
             </label>
             <label>
               Duration (minutes)
-              <input type="number" id="practiceDuration" min="5" step="5" value="20" required />
+              <input type="number" id="practiceDuration" min="5" step="5" value="20" inputmode="numeric" autocomplete="off" required />
             </label>
             <label>
               Focus Area
@@ -163,7 +163,7 @@ window.WH_APP_SHELL = `
             </label>
             <label>
               Notes
-              <textarea id="practiceNotes" placeholder="How did today go on trail?"></textarea>
+              <textarea id="practiceNotes" placeholder="How did today go on trail?" autocapitalize="sentences" autocomplete="off"></textarea>
             </label>
             <div class="btn-row" style="margin-top: 0;">
               <button type="submit" class="btn-primary">Save Practice Log</button>
@@ -229,9 +229,10 @@ window.WH_APP_SHELL = `
         <span class="glance-chip" data-glance-rank>Rank: -</span>
         <span class="glance-chip" data-glance-points>Points: 0</span>
       </div>
-      <div class="card">
+      <div class="card mobile-sticky-controls" id="bookingControlsCard">
         <h3>Booking Overview</h3>
         <p class="muted">See your upcoming bookings, available events, and past/completed events in one place.</p>
+        <p class="muted sync-state" id="bookingSyncState">Checking latest events...</p>
         <details class="filter-drawer">
           <summary>Filters</summary>
           <div class="form-grid" style="margin-top: 10px;">
@@ -247,7 +248,7 @@ window.WH_APP_SHELL = `
               Status
               <select id="bookingStatusFilter">
                 <option value="all">All Statuses</option>
-                <option value="pending">Not Yet</option>
+                <option value="pending">Not Booked</option>
                 <option value="booked">Booked</option>
                 <option value="waitlisted">Waitlisted</option>
                 <option value="passed">Passed</option>
@@ -265,7 +266,7 @@ window.WH_APP_SHELL = `
         <span class="glance-chip" data-glance-rank>Rank: -</span>
         <span class="glance-chip" data-glance-points>Points: 0</span>
       </div>
-      <div class="card">
+      <div class="card mobile-sticky-controls" id="loggedControlsCard">
         <p class="muted">Review all saved practice logs by skill.</p>
         <p style="margin-top: 6px;"><strong>Total Logged Sessions:</strong> <span id="totalLoggedSessions">0</span></p>
         <div class="form-grid" style="margin-top: 8px;">
@@ -385,7 +386,7 @@ window.WH_APP_SHELL = `
       </label>
       <label>
         Date
-        <input type="date" id="logEditDate" required />
+        <input type="date" id="logEditDate" autocomplete="off" required />
       </label>
       <label>
         Step
@@ -399,11 +400,11 @@ window.WH_APP_SHELL = `
       </label>
       <label>
         Duration (minutes)
-        <input type="number" id="logEditDuration" min="1" required />
+        <input type="number" id="logEditDuration" min="1" inputmode="numeric" autocomplete="off" required />
       </label>
       <label>
         Comment
-        <textarea id="logEditComment"></textarea>
+        <textarea id="logEditComment" autocapitalize="sentences" autocomplete="off"></textarea>
       </label>
       <div class="btn-row" style="margin-top: 0;">
         <button type="submit" class="btn-primary">Save Changes</button>
@@ -425,7 +426,7 @@ window.WH_APP_SHELL = `
     <div id="unlockCodeSection" class="form-grid" style="display: none; margin-top: 10px;">
       <label>
         Hill Walk Code
-        <input type="text" id="unlockCodeInput" placeholder="Enter your code" />
+        <input type="text" id="unlockCodeInput" placeholder="Enter your code" autocapitalize="characters" spellcheck="false" autocomplete="one-time-code" />
       </label>
       <div class="btn-row" style="margin-top: 0;">
         <button type="button" class="btn-primary" id="unlockCodeSubmitBtn">Unlock with Code</button>
@@ -434,4 +435,5 @@ window.WH_APP_SHELL = `
     </div>
   </div>
 </div>
+
 `;

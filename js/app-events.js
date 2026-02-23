@@ -24,6 +24,12 @@
       const id = actionEl instanceof HTMLElement ? Number(actionEl.dataset.id) : NaN;
       const kind = actionEl instanceof HTMLElement ? actionEl.dataset.kind : undefined;
       if (action === "unlock-skill") openUnlockSkillModal(id);
+      if (action === "retry-events-sync") {
+        hydrateRemoteEvents({ silent: false }).finally(() => {
+          renderAll();
+          persistState();
+        });
+      }
       if (action === "view-skill") {
         state.selectedSkillId = id;
         renderSkillDetail();
@@ -392,7 +398,6 @@
     document.getElementById("unlockSkillModalBackdrop").addEventListener("click", (e) => {
       if (e.target && e.target.id === "unlockSkillModalBackdrop") closeUnlockSkillModal();
     });
-
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredInstallPrompt = e;
@@ -416,9 +421,11 @@
 
     syncAllSkillProgressFromSteps();
     updateInstallGate();
+    setEventsSyncState("loading", "Checking latest events...");
+    renderAll();
+    showScreen(getInitialScreenFromUrl());
     hydrateRemoteEvents({ silent: true }).finally(() => {
       renderAll();
-      showScreen(getInitialScreenFromUrl());
     });
     setInterval(() => {
       hydrateRemoteEvents({ silent: true });

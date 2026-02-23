@@ -114,7 +114,7 @@
       </div>
       <div class="btn-row">
         <button class="btn-primary" id="payBtn" type="button">Pay with Stripe</button>
-        <a class="btn-secondary" href="index.html">Back to App</a>
+        <button class="btn-secondary" id="backToAppBtn" type="button">Back to App</button>
       </div>
       <div class="done" id="doneMsg">Redirecting to Stripe...</div>
     </div>
@@ -145,6 +145,30 @@
       url.searchParams.set("client_reference_id", `${paymentType}-${skillId || "unknown"}`);
       document.getElementById("doneMsg").style.display = "block";
       window.location.href = url.toString();
+    });
+
+    document.getElementById("backToAppBtn").addEventListener("click", () => {
+      const fallbackUrl = "booking.html?tab=booking";
+      const hasHistory = window.history.length > 1;
+      const sameOriginReferrer = (() => {
+        try {
+          return !!document.referrer && (new URL(document.referrer)).origin === window.location.origin;
+        } catch (e) {
+          return false;
+        }
+      })();
+
+      if (hasHistory && sameOriginReferrer) {
+        window.history.back();
+        setTimeout(() => {
+          if (window.location.pathname.endsWith("payment.html")) {
+            window.location.assign(fallbackUrl);
+          }
+        }, 350);
+        return;
+      }
+
+      window.location.assign(fallbackUrl);
     });
   </script>
 </body>

@@ -387,7 +387,42 @@
       let events = buildEvents(state.bookingFilters.type, state.bookingFilters.status);
 
       const wrap = document.getElementById("bookingEvents");
+      const syncEl = document.getElementById("bookingSyncState");
+      if (syncEl) {
+        const formatSyncTime = (isoText) => {
+          if (!isoText) return "";
+          const dt = new Date(isoText);
+          if (Number.isNaN(dt.getTime())) return "";
+          return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        };
+        const statusText = state.eventsSyncStatus === "loading"
+          ? "Checking latest events..."
+          : state.eventsSyncStatus === "error"
+            ? (state.eventsSyncMessage || "Could not sync latest events.")
+            : (state.eventsSyncMessage || "Events are up to date.");
+        const syncTime = formatSyncTime(state.eventsLastSyncedAt);
+        syncEl.innerHTML = syncTime
+          ? `${statusText}<br><span class="muted">Last synced at ${syncTime}</span>`
+          : statusText;
+        syncEl.classList.toggle("warn", state.eventsSyncStatus === "error");
+      }
+
       if (!events.length) {
+        if (state.eventsSyncStatus === "loading") {
+          wrap.innerHTML = `<div class="card"><p class="muted">Loading events...</p></div>`;
+          return;
+        }
+        if (state.eventsSyncStatus === "error") {
+          wrap.innerHTML = `
+            <div class="card">
+              <p class="muted">Couldn't load events right now.</p>
+              <div class="btn-row">
+                <button class="btn-secondary" data-action="retry-events-sync">Try Again</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
         wrap.innerHTML = `<div class="card"><p class="muted">No events match the selected filters.</p></div>`;
         return;
       }

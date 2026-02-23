@@ -40,6 +40,9 @@
       font-size: 1rem;
       font-weight: 700;
       margin-bottom: 8px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
     }
     .collapse-card > summary::-webkit-details-marker { display: none; }
 
@@ -56,6 +59,9 @@
       font-weight: 700;
       color: var(--forest);
       font-size: 0.9rem;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
     }
     .filter-drawer > summary::-webkit-details-marker { display: none; }
 
@@ -109,16 +115,18 @@
 
     input[type="date"],
     input[type="number"],
+    input[type="text"],
     select,
     textarea {
       width: 100%;
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 8px;
-      font-size: 0.86rem;
+      font-size: 16px;
       background: #fffdf8;
       color: var(--text);
       font-family: inherit;
+      min-height: 44px;
     }
 
     textarea {
@@ -152,10 +160,18 @@
       color: var(--muted);
       font-size: 0.8rem;
       font-weight: 700;
-      padding: 4px 2px;
-      min-height: 0;
+      padding: 10px 2px;
+      min-height: 44px;
       text-decoration: underline;
       text-underline-offset: 2px;
+    }
+
+    .sync-state {
+      margin-top: 6px;
+      font-size: 0.8rem;
+    }
+    .sync-state.warn {
+      color: #8a4f2a;
     }
     .log-select-row {
       display: flex;
@@ -252,4 +268,10 @@
 
     @media (max-width: 759px) {
       main { padding: 14px; }
+      .mobile-sticky-controls {
+        position: sticky;
+        top: 98px;
+        z-index: 8;
+        box-shadow: 0 6px 14px rgba(21, 30, 24, 0.08);
+      }
     }

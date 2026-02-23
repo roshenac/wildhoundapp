@@ -24,6 +24,13 @@
       toasts: [],
       bookedSlotIds: [],
       passedSlotIds: [],
+      eventsSyncStatus: "idle",
+      eventsSyncMessage: "",
+      eventsLastSyncedAt: "",
+      eventsVersion: "",
+      seenEventsVersion: "",
+      dismissedEventsVersion: "",
+      hasPendingAppUpdate: false,
       practiceLogs: {},
       skills: [
         { id: 1, name: "Loose-Lead Legends", desc: "Confident loose-lead skills across trail conditions.", unlocked: true, points: 60, progressStatus: "not_started" },
@@ -90,6 +97,8 @@
 
     const SAVED_USERNAME_KEY = "wildhound_username";
     const SAVED_APP_STATE_KEY = "wildhound_app_state_v1";
+    const SAVED_SEEN_EVENTS_VERSION_KEY = "wildhound_seen_events_version";
+    const SAVED_DISMISSED_EVENTS_VERSION_KEY = "wildhound_dismissed_events_version";
     const HILL_WALK_UNLOCK_CODE = "CODE";
     const ASSESSMENT_PASS_CODE = "PASS5";
     const ASSESSMENT_MORE_WORK_CODE = "REWORK5";
@@ -272,6 +281,78 @@
       state.monthlyWalks = (Array.isArray(state.monthlyWalks) ? state.monthlyWalks : []).map(normalizeWalk).filter(Boolean);
     }
 
+    function saveSeenEventsVersion(version) {
+      try {
+        if (!version) return;
+        localStorage.setItem(SAVED_SEEN_EVENTS_VERSION_KEY, String(version));
+      } catch (error) {
+        // Ignore storage failures.
+      }
+    }
+
+    function saveDismissedEventsVersion(version) {
+      try {
+        if (!version) return;
+        localStorage.setItem(SAVED_DISMISSED_EVENTS_VERSION_KEY, String(version));
+      } catch (error) {
+        // Ignore storage failures.
+      }
+    }
+
+    function setEventsSyncState(status, message) {
+      state.eventsSyncStatus = String(status || "idle");
+      state.eventsSyncMessage = String(message || "");
+    }
+
+    function markEventsSyncedNow() {
+      state.eventsLastSyncedAt = new Date().toISOString();
+    }
+
+    function setEventsVersionFromPayload(payload, options = {}) {
+      const version = payload && payload.updatedAt ? String(payload.updatedAt) : "";
+      if (!version) {
+        if (!state.eventsVersion) state.hasPendingAppUpdate = false;
+        return;
+      }
+
+      if (!state.seenEventsVersion) {
+        try {
+          state.seenEventsVersion = localStorage.getItem(SAVED_SEEN_EVENTS_VERSION_KEY) || "";
+        } catch (error) {
+          state.seenEventsVersion = "";
+        }
+      }
+      if (!state.dismissedEventsVersion) {
+        try {
+          state.dismissedEventsVersion = localStorage.getItem(SAVED_DISMISSED_EVENTS_VERSION_KEY) || "";
+        } catch (error) {
+          state.dismissedEventsVersion = "";
+        }
+      }
+
+      state.eventsVersion = version;
+      const fromRemote = Boolean(options.fromRemote);
+      if (!state.seenEventsVersion) {
+        state.seenEventsVersion = version;
+        saveSeenEventsVersion(version);
+        state.hasPendingAppUpdate = false;
+        return;
+      }
+
+      state.hasPendingAppUpdate = fromRemote
+        && version !== state.seenEventsVersion
+        && version !== state.dismissedEventsVersion;
+    }
+
+    function acknowledgePendingUpdate() {
+      state.hasPendingAppUpdate = false;
+      if (!state.eventsVersion) return;
+      state.seenEventsVersion = state.eventsVersion;
+      state.dismissedEventsVersion = state.eventsVersion;
+      saveSeenEventsVersion(state.eventsVersion);
+      saveDismissedEventsVersion(state.eventsVersion);
+    }
+
     function mergeRemoteEvents(localEvents, remoteEvents) {
       const localById = Object.fromEntries((localEvents || []).map((event) => [Number(event.id), event]));
       return (remoteEvents || []).map((remote) => {
@@ -351,6 +432,7 @@
         ? window.WH_EVENTS_DATA
         : null;
       if (!payload) return false;
+      setEventsVersionFromPayload(payload, { fromRemote: false });
 
       const nextSlots = Array.isArray(payload.slots) ? payload.slots : [];
       const nextWalks = Array.isArray(payload.monthlyWalks) ? payload.monthlyWalks : [];
@@ -364,11 +446,19 @@
     async function hydrateRemoteEvents(options = {}) {
       if (typeof fetch !== "function") return false;
       const silent = Boolean(options.silent);
+      setEventsSyncState("loading", "Checking latest events...");
       try {
         const response = await fetch(REMOTE_EVENTS_URL, { cache: "no-store" });
-        if (!response.ok) return false;
+        if (!response.ok) {
+          setEventsSyncState("error", "Could not sync latest events.");
+          return false;
+        }
         const payload = await response.json();
-        if (!payload || typeof payload !== "object") return false;
+        if (!payload || typeof payload !== "object") {
+          setEventsSyncState("error", "Could not sync latest events.");
+          return false;
+        }
+        setEventsVersionFromPayload(payload, { fromRemote: true });
 
         const currentSlots = JSON.stringify(state.slots || []);
         const currentWalks = JSON.stringify(state.monthlyWalks || []);
@@ -386,12 +476,15 @@
 
         const changed = currentSlots !== JSON.stringify(state.slots || [])
           || currentWalks !== JSON.stringify(state.monthlyWalks || []);
+        markEventsSyncedNow();
+        setEventsSyncState("ready", changed ? "Events updated just now." : "Events are up to date.");
         if (changed) {
           renderAll();
           if (!silent) showToast("Events updated from server.");
         }
         return changed;
       } catch (error) {
+        setEventsSyncState("error", "Could not sync latest events.");
         return false;
       }
     }

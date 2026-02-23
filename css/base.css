@@ -121,8 +121,8 @@
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 11px;
-      margin-bottom: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
     }
 
     .card.highlight {
@@ -175,7 +175,7 @@
       font-size: 0.72rem;
       font-weight: 700;
       line-height: 1;
-      min-height: 28px;
+      min-height: 44px;
     }
 
     .progress-wrap { margin-top: 10px; }
@@ -203,7 +203,7 @@
 
     .btn-row {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
       margin-top: 10px;
     }
