@@ -94,8 +94,6 @@
             walk.status = "booked";
             walk.paymentStatus = "unpaid";
             walk.bookingPointHistoryIds = walk.bookingPointHistoryIds || [];
-            const earlyAwardId = awardEvent("book_walk_early", { sourceKey: `booking:hillwalk:${walk.id}` });
-            if (earlyAwardId) walk.bookingPointHistoryIds.push(earlyAwardId);
             const attendanceAwardId = awardEvent("walk_attendance", { sourceKey: `booking:hillwalk:${walk.id}` });
             if (attendanceAwardId) walk.bookingPointHistoryIds.push(attendanceAwardId);
             showToast("Hill walk booked. Attendance logged.");
