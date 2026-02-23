@@ -23,6 +23,54 @@
       const action = actionEl instanceof HTMLElement ? actionEl.dataset.action : undefined;
       const id = actionEl instanceof HTMLElement ? Number(actionEl.dataset.id) : NaN;
       const kind = actionEl instanceof HTMLElement ? actionEl.dataset.kind : undefined;
+      if (action === "open-monthly-skill") {
+        const monthly = getCurrentMonthlySkill();
+        if (!monthly) return;
+        state.selectedSkillId = monthly.id;
+        if (monthly.unlocked) {
+          renderSkillDetail();
+          showScreen("skill-detail");
+        } else {
+          showScreen("skills");
+          renderSkills();
+          openUnlockSkillModal(monthly.id);
+        }
+      }
+      if (action === "open-booking-walks-booked") {
+        state.bookingFilters.type = "hillwalk";
+        state.bookingFilters.status = "booked";
+        showScreen("booking");
+        renderBooking();
+        persistState();
+      }
+      if (action === "open-booking-assessments-booked") {
+        state.bookingFilters.type = "assessment";
+        state.bookingFilters.status = "booked";
+        showScreen("booking");
+        renderBooking();
+        persistState();
+      }
+      if (action === "open-booking-walks-attended") {
+        state.bookingFilters.type = "hillwalk";
+        state.bookingFilters.status = "passed";
+        showScreen("booking");
+        renderBooking();
+        persistState();
+      }
+      if (action === "open-skills-passed") {
+        showScreen("skills");
+        renderSkills();
+      }
+      if (action === "open-skills") {
+        showScreen("skills");
+        renderSkills();
+      }
+      if (action === "open-rewards") {
+        showScreen("rewards");
+        recalculatePointsFromHistory();
+        renderGlanceChips();
+        renderRewards();
+      }
       if (action === "unlock-skill") openUnlockSkillModal(id);
       if (action === "retry-events-sync") {
         hydrateRemoteEvents({ silent: false }).finally(() => {
@@ -397,6 +445,15 @@
     });
     document.getElementById("unlockSkillModalBackdrop").addEventListener("click", (e) => {
       if (e.target && e.target.id === "unlockSkillModalBackdrop") closeUnlockSkillModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (e.key !== "Enter" && e.key !== " ") return;
+      if (target.matches("[data-action='open-monthly-skill'], [data-action='open-booking-walks-booked'], [data-action='open-booking-assessments-booked'], [data-action='open-booking-walks-attended'], [data-action='open-skills-passed'], [data-action='open-skills'], [data-action='open-rewards']")) {
+        e.preventDefault();
+        target.click();
+      }
     });
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();

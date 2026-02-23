@@ -42,15 +42,15 @@
               <button type="button" class="btn-mini" id="dashboardEditUserBtn">Edit</button>
             </div>
           </div>
-          <div class="meta-item">
+          <div class="meta-item card-clickable" data-action="open-rewards" role="button" tabindex="0" aria-label="Open points and rewards">
             <div class="meta-label">Trail Dog Rank</div>
             <div class="meta-value" id="rankLabel">Trail Dog Rookie</div>
           </div>
-          <div class="meta-item">
+          <div class="meta-item card-clickable" data-action="open-rewards" role="button" tabindex="0" aria-label="Open points and rewards">
             <div class="meta-label">Total Points</div>
             <div class="meta-value" id="totalPoints">0</div>
           </div>
-          <div class="meta-item">
+          <div class="meta-item card-clickable" data-action="open-skills" role="button" tabindex="0" aria-label="Open skills">
             <div class="meta-label">Skills Unlocked</div>
             <div class="meta-value" id="unlockedCount">0 / 14</div>
           </div>
@@ -65,7 +65,7 @@
       </div>
 
       <div class="dashboard-cols">
-        <div class="card highlight">
+        <div class="card highlight card-clickable" data-action="open-monthly-skill" role="button" tabindex="0" aria-label="Open current monthly skill">
           <h3>Current Monthly Skill</h3>
           <p id="monthlySkillName">Loose-Lead Legends</p>
           <p class="muted" id="monthlySkillDesc">Confident loose-lead skills across trail conditions.</p>
@@ -79,19 +79,19 @@
       <div class="card">
         <h3>Activity Snapshot</h3>
         <div class="meta-grid">
-          <div class="meta-item">
+          <div class="meta-item card-clickable" data-action="open-booking-assessments-booked" role="button" tabindex="0" aria-label="View booked assessments">
             <div class="meta-label">Assessments Booked</div>
             <div class="meta-value" id="statAssessmentsBooked">0</div>
           </div>
-          <div class="meta-item">
+          <div class="meta-item card-clickable" data-action="open-booking-walks-booked" role="button" tabindex="0" aria-label="View booked walks">
             <div class="meta-label">Walks Booked</div>
             <div class="meta-value" id="statWalksBooked">0</div>
           </div>
-          <div class="meta-item">
+          <div class="meta-item card-clickable" data-action="open-booking-walks-attended" role="button" tabindex="0" aria-label="View attended walks">
             <div class="meta-label">Walks Attended</div>
             <div class="meta-value" id="statWalksAttended">0</div>
           </div>
-          <div class="meta-item">
+          <div class="meta-item card-clickable" data-action="open-skills-passed" role="button" tabindex="0" aria-label="View skills">
             <div class="meta-label">Skills Passed</div>
             <div class="meta-value" id="statSkillsPassed">0</div>
           </div>
@@ -127,11 +127,11 @@
         <p id="detailDescription"></p>
         <div id="stepsContainer" style="margin-top: 10px;"></div>
 
-        <div class="card" style="margin-top: 10px; margin-bottom: 0;">
-          <h3 id="level5Heading">Stage 5: Stretch Goal</h3>
-          <p id="trailStandardText">Complete Stages 1-4 to unlock Stage 5.</p>
-          <div id="stage5StretchBox" class="checklist" style="margin-top: 8px;"></div>
-        </div>
+        <details id="stage5Details" class="step-locked" style="margin-top: 10px; margin-bottom: 0;">
+          <summary id="level5Heading">Stage 5 (Locked)</summary>
+          <p id="trailStandardText" class="muted" style="display: none;"></p>
+          <div id="stage5StretchBox" class="checklist" style="margin-top: 8px; display: none;"></div>
+        </details>
 
         <div class="btn-row">
           <button class="btn-gold" id="submitEvidenceBtn">Book In For Skill Assessment</button>

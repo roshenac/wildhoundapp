@@ -34,7 +34,21 @@
       document.getElementById("monthlySkillDesc").textContent = monthly ? monthly.desc : "";
 
       const unlockedTags = document.getElementById("unlockedSkillsTags");
-      unlockedTags.innerHTML = unlocked.map(s => `<span class="tag">${s.name}</span>`).join("");
+      unlockedTags.innerHTML = unlocked.length
+        ? unlocked.map((s) => {
+          const progress = getProgressMeta(s);
+          const statusClass = progress && progress.className ? ` status-${progress.className}` : "";
+          return `
+            <button
+              type="button"
+              class="tag${statusClass}"
+              data-action="view-skill"
+              data-id="${s.id}"
+              aria-label="Open ${s.name} details"
+            >${s.name}</button>
+          `;
+        }).join("")
+        : `<span class="tag locked">No unlocked skills yet</span>`;
     }
 
     function renderGlanceChips() {
@@ -134,6 +148,7 @@
               <summary>Stage 4 ${unlocked ? "(Pass Criteria)" : "(Locked)"} ${stage4Passed ? "✓" : ""}</summary>
               <div class="checklist">
                 <div class="muted">${(cfg.stages[4] || "").replace(/^Stage\s+\d+\s*-\s*/i, "")}</div>
+                ${stage4Passed ? `<div class="muted"><strong>${skill.name} passed assessment.</strong></div>` : ""}
                 ${unlocked ? `
                   <div class="btn-row" style="margin-top: 6px;">
                     <button class="btn-secondary" type="button" data-action="open-assessment-booking">Book In For Assessment</button>
@@ -171,7 +186,11 @@
         document.getElementById("detailDescription").textContent = "Unlock a skill from Skills Overview to begin.";
         document.getElementById("detailStatus").textContent = "Locked";
         document.getElementById("stepsContainer").innerHTML = "";
-        document.getElementById("trailStandardText").textContent = "Unlock your first skill to view standards.";
+        document.getElementById("level5Heading").textContent = "Stage 5 (Locked)";
+        document.getElementById("trailStandardText").textContent = "";
+        document.getElementById("trailStandardText").style.display = "none";
+        document.getElementById("stage5Details").classList.add("step-locked");
+        document.getElementById("stage5Details").removeAttribute("open");
         document.getElementById("skillPoints").textContent = "0";
         document.getElementById("submitEvidenceBtn").disabled = true;
         document.getElementById("submitEvidenceBtn").style.display = "none";
@@ -194,14 +213,22 @@
       const skillContent = SKILL_STAGE_CONTENT[selected.id] || SKILL_STAGE_CONTENT[1];
       const isPassed = selected.progressStatus === "passed";
       const stretchDone = Boolean(state.stage5StretchDoneBySkill[selected.id]);
+      const stage5Details = document.getElementById("stage5Details");
+      const stage5Text = document.getElementById("trailStandardText");
       document.getElementById("level5Heading").textContent = isPassed
         ? (stretchDone ? "Stage 5: Stretch Goal ✓" : "Stage 5: Stretch Goal")
-        : "Stage 5: Stretch Goal";
-      document.getElementById("trailStandardText").textContent = isPassed
-        ? `${selected.name} passed assessment.`
-        : stage4Unlocked
-          ? "Stage 4 pass criteria complete. Book in for assessment now. Stage 5 stays locked until you pass."
-          : "Stage 5 is locked until this skill is passed at Stage 4 assessment.";
+        : "Stage 5 (Locked)";
+      if (isPassed) {
+        stage5Details.classList.remove("step-locked");
+        stage5Details.setAttribute("open", "");
+        stage5Text.style.display = "none";
+        stage5Text.textContent = "";
+      } else {
+        stage5Details.classList.add("step-locked");
+        stage5Details.removeAttribute("open");
+        stage5Text.style.display = "none";
+        stage5Text.textContent = "";
+      }
       const stage5StretchBox = document.getElementById("stage5StretchBox");
       if (stage5StretchBox) {
         stage5StretchBox.style.display = isPassed ? "grid" : "none";

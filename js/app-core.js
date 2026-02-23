@@ -446,6 +446,11 @@
     async function hydrateRemoteEvents(options = {}) {
       if (typeof fetch !== "function") return false;
       const silent = Boolean(options.silent);
+      if (typeof window !== "undefined" && window.location && window.location.protocol === "file:") {
+        markEventsSyncedNow();
+        setEventsSyncState("ready", "Local preview mode: using bundled events.");
+        return false;
+      }
       setEventsSyncState("loading", "Checking latest events...");
       try {
         const response = await fetch(REMOTE_EVENTS_URL, { cache: "no-store" });
