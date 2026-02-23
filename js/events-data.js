@@ -1,5 +1,5 @@
 window.WH_EVENTS_DATA = {
-  "updatedAt": "2026-02-23T12:00:00Z",
+  "updatedAt": "2026-02-23T13:00:00Z",
   "clearAssessmentBookings": true,
   "slots": [],
   "monthlyWalks": [
@@ -11,9 +11,9 @@ window.WH_EVENTS_DATA = {
       "dateISO": "2026-03-22",
       "location": "Cedar Ridge",
       "skill": "Close & Behind",
-      "status": "booked",
+      "status": "pending",
       "capacity": 6,
-      "bookedCount": 6,
+      "bookedCount": 0,
       "waitlistCount": 0
     },
     {
@@ -24,9 +24,9 @@ window.WH_EVENTS_DATA = {
       "dateISO": "2026-04-19",
       "location": "Falcon Bluff",
       "skill": "Loose-Lead Legends",
-      "status": "booked",
+      "status": "pending",
       "capacity": 6,
-      "bookedCount": 6,
+      "bookedCount": 0,
       "waitlistCount": 0
     },
     {
@@ -37,9 +37,9 @@ window.WH_EVENTS_DATA = {
       "dateISO": "2026-05-17",
       "location": "Summit Spur",
       "skill": "Reliable Recalls",
-      "status": "booked",
+      "status": "pending",
       "capacity": 6,
-      "bookedCount": 6,
+      "bookedCount": 0,
       "waitlistCount": 0
     },
     {
@@ -50,9 +50,9 @@ window.WH_EVENTS_DATA = {
       "dateISO": "2026-06-14",
       "location": "Heather Rise",
       "skill": "Downstay Masters",
-      "status": "booked",
+      "status": "pending",
       "capacity": 6,
-      "bookedCount": 6,
+      "bookedCount": 0,
       "waitlistCount": 0
     },
     {
@@ -63,9 +63,9 @@ window.WH_EVENTS_DATA = {
       "dateISO": "2026-07-12",
       "location": "Stone Ridge",
       "skill": "Livestock Calm",
-      "status": "booked",
+      "status": "pending",
       "capacity": 6,
-      "bookedCount": 6,
+      "bookedCount": 0,
       "waitlistCount": 0
     },
     {
@@ -76,9 +76,9 @@ window.WH_EVENTS_DATA = {
       "dateISO": "2026-08-16",
       "location": "Fern Peak",
       "skill": "Polite Passes: Dogs",
-      "status": "booked",
+      "status": "pending",
       "capacity": 6,
-      "bookedCount": 6,
+      "bookedCount": 0,
       "waitlistCount": 0
     },
     {
@@ -89,9 +89,9 @@ window.WH_EVENTS_DATA = {
       "dateISO": "2026-09-13",
       "location": "Windgate Loop",
       "skill": "Food Manners",
-      "status": "booked",
+      "status": "pending",
       "capacity": 6,
-      "bookedCount": 6,
+      "bookedCount": 0,
       "waitlistCount": 0
     },
     {
@@ -102,9 +102,9 @@ window.WH_EVENTS_DATA = {
       "dateISO": "2026-10-18",
       "location": "Long View Trail",
       "skill": "Trail Etiquette Pro",
-      "status": "booked",
+      "status": "pending",
       "capacity": 6,
-      "bookedCount": 6,
+      "bookedCount": 0,
       "waitlistCount": 0
     }
   ]
