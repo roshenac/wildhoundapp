@@ -161,7 +161,7 @@ window.WH_APP_SHELL = `
             </label>
             <label>
               Notes
-              <textarea id="practiceNotes" placeholder="How did today go on trail?" autocapitalize="sentences" autocomplete="off"></textarea>
+              <textarea id="practiceNotes" placeholder="How did the training session go?" autocapitalize="sentences" autocomplete="off"></textarea>
             </label>
             <div class="btn-row sticky-actions" style="margin-top: 0;">
               <button type="submit" class="btn-primary">Save Practice Log</button>
