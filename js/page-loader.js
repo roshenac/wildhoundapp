@@ -16,6 +16,16 @@
     });
   }
 
+  function renderVersionFromConfig() {
+    var cfg = (typeof window !== 'undefined' && window.WH_CONFIG && typeof window.WH_CONFIG === 'object')
+      ? window.WH_CONFIG
+      : {};
+    var version = String(cfg.appVersion || '').trim();
+    if (!version) return;
+    var el = document.getElementById('appVersionText');
+    if (el) el.textContent = 'v' + version;
+  }
+
   function injectShell() {
     var shellUrl = getShellUrl();
     if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol !== 'file:') {
@@ -46,6 +56,7 @@
   function boot() {
     injectShell()
       .then(function () { return loadScript('js/config.js'); })
+      .then(function () { renderVersionFromConfig(); })
       .then(function () { return loadScript('js/validators.js'); })
       .then(function () { return loadScript('js/services/state-store.js'); })
       .then(function () { return loadScript('js/services/codebook-service.js'); })
@@ -57,6 +68,7 @@
       .then(function () { return loadScript('js/app-core.js'); })
       .then(function () { return loadScript('js/app-render.js'); })
       .then(function () { return loadScript('js/app-events.js'); })
+      .then(function () { renderVersionFromConfig(); })
       .then(function () {
         var cfg = (typeof window !== 'undefined' && window.WH_CONFIG && typeof window.WH_CONFIG === 'object')
           ? window.WH_CONFIG
