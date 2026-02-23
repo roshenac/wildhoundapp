@@ -161,7 +161,7 @@
         }
 
         return `
-          <details class="${unlocked ? "" : "step-locked"}" ${stepNum === 1 || (stepNum > 1 && unlocked && !complete) ? "open" : ""}>
+          <details class="${unlocked ? "" : "step-locked"}" ${(unlocked && !complete) ? "open" : ""}>
             <summary>Stage ${stepNum} ${complete ? "✓" : (unlocked ? "" : "(Locked)")}</summary>
             <div class="checklist">
               <label class="check-item">
