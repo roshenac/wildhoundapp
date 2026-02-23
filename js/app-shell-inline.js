@@ -30,6 +30,9 @@ window.WH_APP_SHELL = `
       <span class="pill network-pill" id="networkStatusPill" aria-live="polite">Online</span>
     </div>
   </header>
+  <div class="update-test-banner" id="appVersionBanner" aria-live="polite">
+    Live Build: <strong id="appVersionText">v-</strong>
+  </div>
 
   <main>
     <section class="screen active" id="dashboard">

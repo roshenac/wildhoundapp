@@ -114,6 +114,16 @@
       font-weight: 600;
       background: #f8f3e4;
     }
+    .update-test-banner {
+      margin: 8px 14px 0;
+      border: 1px solid #caa56b;
+      background: #fff0cf;
+      color: #5e3a1f;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
 
     main { padding: 16px; }
 

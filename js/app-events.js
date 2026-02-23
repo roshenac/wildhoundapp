@@ -8,6 +8,17 @@
       pill.classList.toggle("offline", !online);
     }
 
+    function renderAppVersionBanner() {
+      const cfg = (typeof window !== "undefined" && window.WH_CONFIG && typeof window.WH_CONFIG === "object")
+        ? window.WH_CONFIG
+        : {};
+      const version = String(cfg.appVersion || "").trim() || "dev";
+      const versionTextEl = document.getElementById("appVersionText");
+      const versionBannerEl = document.getElementById("appVersionBanner");
+      if (versionTextEl) versionTextEl.textContent = `v${version}`;
+      if (versionBannerEl) versionBannerEl.setAttribute("title", `Build ${version}`);
+    }
+
     function queueSyncTask(taskName) {
       if (!taskName) return;
       if (syncTaskQueue.includes(taskName)) return;
@@ -918,6 +929,7 @@
 
     syncAllSkillProgressFromSteps();
     updateInstallGate();
+    renderAppVersionBanner();
     updateNetworkStatusPill();
     setEventsSyncState("loading", "Checking latest events...");
     renderAll({ forceAll: true });
