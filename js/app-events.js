@@ -405,10 +405,11 @@
     });
 
     syncAllSkillProgressFromSteps();
-    renderAll();
-    showScreen(getInitialScreenFromUrl());
     updateInstallGate();
-    hydrateRemoteEvents({ silent: true });
+    hydrateRemoteEvents({ silent: true }).finally(() => {
+      renderAll();
+      showScreen(getInitialScreenFromUrl());
+    });
     setInterval(() => {
       hydrateRemoteEvents({ silent: true });
     }, REMOTE_EVENTS_REFRESH_MS);

@@ -41,17 +41,8 @@
         { id: 13, name: "Muzzle Training", desc: "Comfortable, stress-free muzzle wear.", unlocked: false, points: 0 },
         { id: 14, name: "Trail Etiquette Pro", desc: "Reliable cue response and path manners.", unlocked: false, points: 0 }
       ],
-      slots: [
-        { id: 1, day: "Saturday, Mar 7", time: "8:00 AM", dateISO: "2026-03-07", location: "Pine Ridge Trail", status: "pending", capacity: 10, bookedCount: 9, waitlistCount: 0 },
-        { id: 2, day: "Saturday, Mar 7", time: "9:30 AM", dateISO: "2026-03-07", location: "Pine Ridge Trail", status: "pending", capacity: 10, bookedCount: 8, waitlistCount: 0 },
-        { id: 3, day: "Sunday, Mar 15", time: "10:00 AM", dateISO: "2026-03-15", location: "North Bluff Loop", status: "pending", capacity: 8, bookedCount: 8, waitlistCount: 2 },
-        { id: 4, day: "Sunday, Mar 15", time: "11:30 AM", dateISO: "2026-03-15", location: "North Bluff Loop", status: "pending", capacity: 8, bookedCount: 7, waitlistCount: 0 }
-      ],
-      monthlyWalks: [
-        { id: 101, month: "March Hill Walk", day: "Sunday, Mar 22", time: "7:30 AM", dateISO: "2026-03-22", location: "Cedar Ridge", skill: "Close & Behind", status: "pending", capacity: 12, bookedCount: 11, waitlistCount: 0 },
-        { id: 102, month: "April Hill Walk", day: "Sunday, Apr 19", time: "8:00 AM", dateISO: "2026-04-19", location: "Falcon Bluff", skill: "Loose-Lead Legends", status: "pending", capacity: 12, bookedCount: 12, waitlistCount: 3 },
-        { id: 103, month: "May Hill Walk", day: "Sunday, May 17", time: "8:30 AM", dateISO: "2026-05-17", location: "Summit Spur", skill: "Reliable Recalls", status: "pending", capacity: 12, bookedCount: 9, waitlistCount: 0 }
-      ]
+      slots: [],
+      monthlyWalks: []
     };
 
     const POINT_RULES = {
@@ -109,6 +100,7 @@
       ? String(window.WH_EVENTS_URL)
       : "events.json";
     const REMOTE_EVENTS_REFRESH_MS = 5 * 60 * 1000;
+    const REMOTE_ASSESSMENT_RESET_APPLIED_KEY = "wildhound_assessment_reset_applied";
     // Set to `true` to require installed-app mode, or `false` to allow normal browser use.
     const ENFORCE_INSTALL_GATE = true;
     let deferredInstallPrompt = null;
@@ -290,6 +282,29 @@
 
         state.slots = mergeRemoteEvents(state.slots, nextSlots);
         state.monthlyWalks = mergeRemoteEvents(state.monthlyWalks, nextWalks);
+
+        const resetToken = String(payload.updatedAt || "reset-v1");
+        let resetAlreadyApplied = false;
+        try {
+          resetAlreadyApplied = localStorage.getItem(REMOTE_ASSESSMENT_RESET_APPLIED_KEY) === resetToken;
+        } catch (error) {
+          resetAlreadyApplied = false;
+        }
+
+        if (payload.clearAssessmentBookings === true && !resetAlreadyApplied) {
+          state.slots = (state.slots || []).map((slot) => {
+            const reset = { ...slot, status: "pending" };
+            delete reset.paymentStatus;
+            reset.bookingPointHistoryIds = [];
+            return reset;
+          });
+          try {
+            localStorage.setItem(REMOTE_ASSESSMENT_RESET_APPLIED_KEY, resetToken);
+          } catch (error) {
+            // Ignore storage failures.
+          }
+        }
+
         normalizeBookingData();
         normalizeSkillCatalog();
 

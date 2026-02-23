@@ -1,5 +1,6 @@
 {
-  "updatedAt": "2026-02-23T00:00:00Z",
+  "updatedAt": "2026-02-23T12:00:00Z",
+  "clearAssessmentBookings": true,
   "slots": [
     {
       "id": 1,
@@ -55,9 +56,9 @@
       "dateISO": "2026-03-22",
       "location": "Cedar Ridge",
       "skill": "Close & Behind",
-      "status": "pending",
-      "capacity": 12,
-      "bookedCount": 11,
+      "status": "booked",
+      "capacity": 6,
+      "bookedCount": 6,
       "waitlistCount": 0
     },
     {
@@ -68,10 +69,10 @@
       "dateISO": "2026-04-19",
       "location": "Falcon Bluff",
       "skill": "Loose-Lead Legends",
-      "status": "pending",
-      "capacity": 12,
-      "bookedCount": 12,
-      "waitlistCount": 3
+      "status": "booked",
+      "capacity": 6,
+      "bookedCount": 6,
+      "waitlistCount": 0
     },
     {
       "id": 103,
@@ -81,9 +82,74 @@
       "dateISO": "2026-05-17",
       "location": "Summit Spur",
       "skill": "Reliable Recalls",
-      "status": "pending",
-      "capacity": 12,
-      "bookedCount": 9,
+      "status": "booked",
+      "capacity": 6,
+      "bookedCount": 6,
+      "waitlistCount": 0
+    },
+    {
+      "id": 104,
+      "month": "June Hill Walk",
+      "day": "Sunday, Jun 14",
+      "time": "8:00 AM",
+      "dateISO": "2026-06-14",
+      "location": "Heather Rise",
+      "skill": "Downstay Masters",
+      "status": "booked",
+      "capacity": 6,
+      "bookedCount": 6,
+      "waitlistCount": 0
+    },
+    {
+      "id": 105,
+      "month": "July Hill Walk",
+      "day": "Sunday, Jul 12",
+      "time": "8:00 AM",
+      "dateISO": "2026-07-12",
+      "location": "Stone Ridge",
+      "skill": "Livestock Calm",
+      "status": "booked",
+      "capacity": 6,
+      "bookedCount": 6,
+      "waitlistCount": 0
+    },
+    {
+      "id": 106,
+      "month": "August Hill Walk",
+      "day": "Sunday, Aug 16",
+      "time": "8:00 AM",
+      "dateISO": "2026-08-16",
+      "location": "Fern Peak",
+      "skill": "Polite Passes: Dogs",
+      "status": "booked",
+      "capacity": 6,
+      "bookedCount": 6,
+      "waitlistCount": 0
+    },
+    {
+      "id": 107,
+      "month": "September Hill Walk",
+      "day": "Sunday, Sep 13",
+      "time": "8:00 AM",
+      "dateISO": "2026-09-13",
+      "location": "Windgate Loop",
+      "skill": "Food Manners",
+      "status": "booked",
+      "capacity": 6,
+      "bookedCount": 6,
+      "waitlistCount": 0
+    },
+    {
+      "id": 108,
+      "month": "October Hill Walk",
+      "day": "Sunday, Oct 18",
+      "time": "8:00 AM",
+      "dateISO": "2026-10-18",
+      "location": "Long View Trail",
+      "skill": "Trail Etiquette Pro",
+      "status": "booked",
+      "capacity": 6,
+      "bookedCount": 6,
       "waitlistCount": 0
     }
   ]
