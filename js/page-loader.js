@@ -67,7 +67,7 @@
         navigator.serviceWorker.register(swPath).catch(function () {});
       })
       .catch(function (err) {
-        document.body.innerHTML = '<main style="padding:16px;font-family:Arial,sans-serif"><h1>Wild Hound</h1><p>Could not load app. ' + String(err && err.message ? err.message : err) + '</p></main>';
+        document.body.innerHTML = '<main style="padding:16px;font-family:Arial,sans-serif"><h1>Wild Hound Club App</h1><p>Could not load app. ' + String(err && err.message ? err.message : err) + '</p></main>';
       });
   }
 

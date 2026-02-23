@@ -2,7 +2,7 @@
 window.WH_APP_SHELL = `
 <section class="install-gate" id="installGate" aria-live="polite">
   <div class="install-card">
-    <h1>Install Wild Hound</h1>
+    <h1>Install Wild Hound Club App</h1>
     <p class="muted">Wild Hound can only be used from your home screen app.</p>
     <div class="btn-row">
       <button type="button" class="btn-primary" id="installAppBtn" style="display: none;">Add to Home Screen</button>
@@ -20,7 +20,15 @@ window.WH_APP_SHELL = `
     <div class="brand">
       Wild Hound Club
     </div>
-    <span class="pill network-pill" id="networkStatusPill" aria-live="polite">Online</span>
+    <div class="topbar-right">
+      <img
+        class="header-logo"
+        src="logo-source.png"
+        alt="Wild Hound Club logo"
+        loading="eager"
+      />
+      <span class="pill network-pill" id="networkStatusPill" aria-live="polite">Online</span>
+    </div>
   </header>
 
   <main>

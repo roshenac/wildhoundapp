@@ -1,6 +1,6 @@
 {
-  "name": "Wild Hound",
-  "short_name": "Wild Hound",
+  "name": "Wild Hound Club App",
+  "short_name": "Wild Hound Club",
   "id": "/wildhoundapp/",
   "description": "Wild Hound dog skill progression tracking app.",
   "start_url": "/wildhoundapp/dashboard.html",

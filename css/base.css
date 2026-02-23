@@ -81,6 +81,21 @@
       font-size: 1.15rem;
       letter-spacing: 0.4px;
     }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #f8f3e4;
+      box-shadow: 0 2px 8px rgba(22, 40, 29, 0.12);
+      flex: 0 0 auto;
+    }
 
     .icon {
       width: 24px;
