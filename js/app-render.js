@@ -208,6 +208,33 @@
       }).join("");
     }
 
+    function getStageFocusOptions(skillId) {
+      const cfg = SKILL_STAGE_CONTENT[skillId] || SKILL_STAGE_CONTENT[1];
+      const options = [1, 2, 3, 4].map((stageNum) => {
+        const raw = String((cfg && cfg.stages && cfg.stages[stageNum]) || `Stage ${stageNum}`).trim();
+        const label = raw.includes(":") ? raw.split(":")[0].trim() : raw;
+        return { value: label, label };
+      });
+      options.push({ value: "Stage 5 - Stretch Goal", label: "Stage 5 - Stretch Goal" });
+      return options;
+    }
+
+    function populateStageFocusSelect(selectEl, skillId, selectedValue) {
+      if (!(selectEl instanceof HTMLSelectElement)) return;
+      const options = getStageFocusOptions(skillId);
+      selectEl.innerHTML = options.map((opt) => {
+        const escapedValue = String(opt.value).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+        const escapedLabel = String(opt.label).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return `<option value="${escapedValue}">${escapedLabel}</option>`;
+      }).join("");
+      const wanted = String(selectedValue || "").trim();
+      if (wanted && options.some((opt) => opt.value === wanted)) {
+        selectEl.value = wanted;
+      } else {
+        selectEl.value = options[0].value;
+      }
+    }
+
     function renderSkillDetail() {
       let selected = state.skills.find(s => s.id === state.selectedSkillId);
       if (!selected || !selected.unlocked) {
@@ -243,6 +270,7 @@
       document.getElementById("detailStatus").textContent = selected.unlocked ? getProgressMeta(selected).text : "Locked";
       document.getElementById("skillPoints").textContent = selected.points;
       document.getElementById("stepsContainer").innerHTML = buildSteps(selected.id);
+      populateStageFocusSelect(document.getElementById("practiceFocus"), selected.id);
       const stage4Unlocked = isStepUnlocked(selected.id, 4);
       const skillContent = SKILL_STAGE_CONTENT[selected.id] || SKILL_STAGE_CONTENT[1];
       const isPassed = selected.progressStatus === "passed";
@@ -763,8 +791,8 @@
         .map((s) => `<option value="${s.id}">${s.name}</option>`)
         .join("");
       skillSelect.value = String(skillId);
+      populateStageFocusSelect(document.getElementById("logEditStep"), skillId, log.focus || "");
       document.getElementById("logEditDate").value = log.date || "";
-      document.getElementById("logEditStep").value = log.focus || "Stage 1";
       document.getElementById("logEditDuration").value = String(log.duration || 20);
       document.getElementById("logEditComment").value = log.notes || "";
       state.logEditContext = { skillId, logId };

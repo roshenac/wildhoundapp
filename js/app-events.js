@@ -377,6 +377,13 @@
     document.getElementById("cancelLogEditBtn").addEventListener("click", () => {
       closeLogEditModal();
     });
+    document.getElementById("logEditSkill").addEventListener("change", (e) => {
+      const select = e.target;
+      if (!(select instanceof HTMLSelectElement)) return;
+      const skillId = Number(select.value);
+      if (!skillId) return;
+      populateStageFocusSelect(document.getElementById("logEditStep"), skillId);
+    });
     document.getElementById("logEditForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const ctx = state.logEditContext;
