@@ -1,0 +1,302 @@
+.skills-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+    .skill-card {
+      position: relative;
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .skill-card.locked {
+      opacity: 0.58;
+      background: #f2efe7;
+    }
+    .skill-card.status-not-started {
+      border-color: #c8ced0;
+      background: #f5f6f4;
+    }
+    .skill-card.status-in-progress {
+      border-color: #d9c891;
+      background: #faf4e5;
+    }
+    .skill-card.status-needs-more-work {
+      border-color: #d7b39b;
+      background: #f9ece4;
+    }
+    .skill-card.status-passed {
+      border-color: #b8cab9;
+      background: #eaf2eb;
+    }
+    .skill-card.status-passed-stretch {
+      border-color: #9ebf9f;
+      background: #e2f0e4;
+      box-shadow: inset 0 0 0 1px #c7dbc9;
+    }
+
+    .status {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status.unlocked { color: var(--success); }
+    .status.not-started { color: #8b928d; }
+    .status.locked { color: var(--warn); }
+    .status.passed { color: #2d5f3f; }
+    .status.passed-stretch { color: #244e34; }
+    .status.in-progress { color: #7b6c3e; }
+    .status.needs-more-work { color: #8a4f2a; }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #faf8f2;
+      margin-bottom: 8px;
+    }
+    details summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--forest);
+      font-size: 0.92rem;
+    }
+
+    .checklist {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+    }
+    .check-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.88rem;
+      min-height: 44px;
+    }
+    .step-locked {
+      opacity: 0.6;
+      background: #f2eee4;
+    }
+    .step-locked summary {
+      color: var(--muted);
+    }
+
+    .badge-placeholder {
+      border: 1px dashed var(--gold);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-top: 10px;
+    }
+    .badge-placeholder.earned {
+      border-style: solid;
+      border-color: #b8cab9;
+      background: #eaf2eb;
+      color: #2f5e3f;
+    }
+    .badge-award {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      text-align: left;
+    }
+    .badge-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid #94b39b;
+      background: #f4fbf4;
+      display: grid;
+      place-items: center;
+      color: #2f5e3f;
+      font-weight: 700;
+      font-size: 0.9rem;
+      flex: 0 0 auto;
+    }
+    .badge-title {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: #2f5e3f;
+      font-size: 0.94rem;
+    }
+    .badge-sub {
+      margin: 2px 0 0;
+      color: #4d5f51;
+      font-size: 0.78rem;
+    }
+
+    .ladder {
+      position: relative;
+      margin-left: 8px;
+      padding-left: 16px;
+      border-left: 3px solid #d8d2c3;
+      display: grid;
+      gap: 14px;
+    }
+
+    .step {
+      position: relative;
+      background: #f9f6ef;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .step::before {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      left: -22px;
+      top: 15px;
+      border-radius: 50%;
+      background: #cfc8b5;
+      border: 2px solid var(--cream);
+    }
+
+    .step.reached {
+      border-color: var(--gold);
+      background: #faf3de;
+    }
+
+    .step.reached::before { background: var(--gold); }
+
+    .reward-hero {
+      background: linear-gradient(160deg, #fbf6e9 0%, #f3ecda 100%);
+      border-color: #cfbe8a;
+    }
+
+    .reward-kicker {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #7f7458;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .reward-points {
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      font-size: 2rem;
+      margin: 0;
+      line-height: 1.05;
+    }
+
+
+    .example-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #faf8f2;
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .example-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .example-title {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--forest);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .slots {
+      display: grid;
+      gap: 8px;
+    }
+
+    .slot {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #f8f6ef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .month-header {
+      margin: 6px 0 2px;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      font-size: 0.96rem;
+      letter-spacing: 0.2px;
+    }
+
+    .slot small { color: var(--muted); }
+
+    .status-pill {
+      font-size: 0.74rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+    }
+    .status-pill.booked { color: #2f5e3f; background: #e7f1e9; border-color: #bdd4c1; }
+    .status-pill.passed { color: #35503d; background: #e2ebdd; border-color: #afc5ae; }
+    .status-pill.pending { color: #7b6c3e; background: #f7f0dd; border-color: #d9c891; }
+    .status-pill.waitlisted { color: #6a4a2d; background: #f4e4d8; border-color: #d9b89d; }
+    .status-pill.payment { color: #6a5330; background: #f7efdb; border-color: #d8c08d; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-top: 1px solid var(--line);
+      background: rgba(252, 250, 245, 0.96);
+      backdrop-filter: blur(6px);
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      padding: 8px 6px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .tab-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.72rem;
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      padding: 6px 4px;
+      border-radius: 8px;
+      min-height: 44px;
+    }
+
+    .tab-btn.active {
+      color: var(--forest);
+      background: #f0ece0;
+      font-weight: 700;
+    }
+
+    .tab-btn .icon { width: 19px; height: 19px; }
+
+    .inline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }

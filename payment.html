@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wild Hound Payment</title>
+  <style>
+    :root {
+      --forest: #1F3D2B;
+      --cream: #F4F1E8;
+      --gold: #C2A85A;
+      --text: #4c5550;
+      --line: #d7d2c6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--text);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      padding: 18px;
+    }
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fcfaf5;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    h1, h2 {
+      margin: 0 0 10px;
+      color: var(--forest);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .muted {
+      color: #77807a;
+      font-size: 0.9rem;
+    }
+    .field {
+      margin-top: 10px;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      margin-bottom: 4px;
+      color: #6d766f;
+    }
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.92rem;
+      background: #fffdf8;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button, a {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--forest);
+      color: #f4f1e8;
+    }
+    .btn-secondary {
+      border-color: var(--forest);
+      color: var(--forest);
+      background: transparent;
+    }
+    .done {
+      display: none;
+      border: 1px solid #b9cbbd;
+      background: #eaf2eb;
+      color: #2d5a3b;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Wild Hound Checkout</h1>
+      <p class="muted" id="skillLine">Unlocking skill access.</p>
+    </div>
+
+    <div class="card">
+      <h2>Secure Checkout</h2>
+      <p class="muted">You will be redirected to Stripe to complete payment securely.</p>
+      <div class="field">
+        <label for="email">Email (optional)</label>
+        <input id="email" type="email" placeholder="you@example.com" />
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" id="payBtn" type="button">Pay with Stripe</button>
+        <a class="btn-secondary" href="index.html">Back to App</a>
+      </div>
+      <div class="done" id="doneMsg">Redirecting to Stripe...</div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const paymentType = (params.get("type") || "skill").toLowerCase();
+    const skill = params.get("skill") || "Selected Skill";
+    const skillId = params.get("skillId") || "";
+    document.getElementById("skillLine").textContent = `Unlocking: ${skill}`;
+
+    const STRIPE_PAYMENT_LINKS = {
+      skill: "https://buy.stripe.com/14AeVf9i9cvU7h33Eh57W00",
+      walk: "https://buy.stripe.com/4gM8wRbqh8fE1WJdeR57W01",
+      assessment: "https://buy.stripe.com/bJe14p0LD9jIbxj6Qt57W02"
+    };
+
+    function getStripeLink(type) {
+      return STRIPE_PAYMENT_LINKS[type] || STRIPE_PAYMENT_LINKS.skill;
+    }
+
+    document.getElementById("payBtn").addEventListener("click", () => {
+      const base = getStripeLink(paymentType);
+      const email = (document.getElementById("email").value || "").trim();
+      const url = new URL(base);
+      if (email) url.searchParams.set("prefilled_email", email);
+      url.searchParams.set("client_reference_id", `${paymentType}-${skillId || "unknown"}`);
+      document.getElementById("doneMsg").style.display = "block";
+      window.location.href = url.toString();
+    });
+  </script>
+</body>
+</html>
