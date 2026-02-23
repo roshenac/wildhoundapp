@@ -1,0 +1,2622 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wild Hound</title>
+  <style>
+    :root {
+      --forest: #1F3D2B;
+      --cream: #F4F1E8;
+      --gold: #C2A85A;
+      --text: #4c5550;
+      --muted: #8b928d;
+      --card: #fcfaf5;
+      --line: #d7d2c6;
+      --success: #3a6a4a;
+      --warn: #8f7532;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 1080px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 88px;
+    }
+    .install-gate {
+      display: none;
+      min-height: 100vh;
+      padding: 20px 16px 24px;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream);
+    }
+    body.install-gated .install-gate {
+      display: flex;
+    }
+    body.install-gated .app,
+    body.install-gated .bottom-nav,
+    body.install-gated .mobile-sticky-cta,
+    body.install-gated .toast-wrap,
+    body.install-gated .modal-backdrop {
+      display: none !important;
+    }
+    .install-card {
+      width: min(520px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fcfaf5;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(20, 29, 23, 0.08);
+    }
+    .install-card h1 {
+      margin-bottom: 8px;
+    }
+    .install-card .guide-list {
+      margin-top: 10px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(244, 241, 232, 0.95);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      font-size: 1.15rem;
+      letter-spacing: 0.4px;
+    }
+
+    .icon {
+      width: 24px;
+      height: 24px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .pill {
+      border: 1px solid var(--gold);
+      color: var(--forest);
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f8f3e4;
+    }
+
+    main { padding: 16px; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    h1, h2, h3 {
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      margin: 0 0 10px;
+      letter-spacing: 0.2px;
+    }
+
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.18rem; margin-top: 14px; }
+    h3 { font-size: 1rem; }
+
+    p { margin: 0; line-height: 1.5; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 11px;
+      margin-bottom: 12px;
+    }
+
+    .card.highlight {
+      border-color: var(--gold);
+      box-shadow: 0 4px 14px rgba(31, 61, 43, 0.06);
+      background: #f9f4e6;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .meta-item {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8f6ef;
+    }
+
+    .meta-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .meta-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--forest);
+    }
+
+    .meta-inline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .btn-mini {
+      border: 1px solid var(--line);
+      background: #f6f2e7;
+      color: var(--forest);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1;
+      min-height: 28px;
+    }
+
+    .progress-wrap { margin-top: 10px; }
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .progress {
+      width: 100%;
+      height: 10px;
+      background: #e4e0d4;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--forest), #35593f);
+      transition: width 0.3s ease;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      min-height: 44px;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--forest);
+      color: #f4f1e8;
+    }
+    a.btn-primary, a.btn-secondary, a.btn-gold {
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--forest);
+      border-color: var(--forest);
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #2b2b2b;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      border: 1px solid var(--line);
+      background: #f6f4ee;
+    }
+
+    .tag.locked {
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .skill-card {
+      position: relative;
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .skill-card.locked {
+      opacity: 0.58;
+      background: #f2efe7;
+    }
+    .skill-card.status-not-started {
+      border-color: #c8ced0;
+      background: #f5f6f4;
+    }
+    .skill-card.status-in-progress {
+      border-color: #d9c891;
+      background: #faf4e5;
+    }
+    .skill-card.status-needs-more-work {
+      border-color: #d7b39b;
+      background: #f9ece4;
+    }
+    .skill-card.status-passed {
+      border-color: #b8cab9;
+      background: #eaf2eb;
+    }
+
+    .status {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status.unlocked { color: var(--success); }
+    .status.not-started { color: #8b928d; }
+    .status.locked { color: var(--warn); }
+    .status.passed { color: #2d5f3f; }
+    .status.in-progress { color: #7b6c3e; }
+    .status.needs-more-work { color: #8a4f2a; }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #faf8f2;
+      margin-bottom: 8px;
+    }
+    details summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--forest);
+      font-size: 0.92rem;
+    }
+
+    .checklist {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+    }
+    .check-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.88rem;
+      min-height: 44px;
+    }
+    .step-locked {
+      opacity: 0.6;
+      background: #f2eee4;
+    }
+    .step-locked summary {
+      color: var(--muted);
+    }
+
+    .badge-placeholder {
+      border: 1px dashed var(--gold);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-top: 10px;
+    }
+    .badge-placeholder.earned {
+      border-style: solid;
+      border-color: #b8cab9;
+      background: #eaf2eb;
+      color: #2f5e3f;
+    }
+    .badge-award {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      text-align: left;
+    }
+    .badge-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid #94b39b;
+      background: #f4fbf4;
+      display: grid;
+      place-items: center;
+      color: #2f5e3f;
+      font-weight: 700;
+      font-size: 0.9rem;
+      flex: 0 0 auto;
+    }
+    .badge-title {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: #2f5e3f;
+      font-size: 0.94rem;
+    }
+    .badge-sub {
+      margin: 2px 0 0;
+      color: #4d5f51;
+      font-size: 0.78rem;
+    }
+
+    .ladder {
+      position: relative;
+      margin-left: 8px;
+      padding-left: 16px;
+      border-left: 3px solid #d8d2c3;
+      display: grid;
+      gap: 14px;
+    }
+
+    .step {
+      position: relative;
+      background: #f9f6ef;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .step::before {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      left: -22px;
+      top: 15px;
+      border-radius: 50%;
+      background: #cfc8b5;
+      border: 2px solid var(--cream);
+    }
+
+    .step.reached {
+      border-color: var(--gold);
+      background: #faf3de;
+    }
+
+    .step.reached::before { background: var(--gold); }
+
+    .reward-hero {
+      background: linear-gradient(160deg, #fbf6e9 0%, #f3ecda 100%);
+      border-color: #cfbe8a;
+    }
+
+    .reward-kicker {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #7f7458;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .reward-points {
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      font-size: 2rem;
+      margin: 0;
+      line-height: 1.05;
+    }
+
+
+    .example-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #faf8f2;
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .example-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .example-title {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--forest);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .slots {
+      display: grid;
+      gap: 8px;
+    }
+
+    .slot {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #f8f6ef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .month-header {
+      margin: 6px 0 2px;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      font-size: 0.96rem;
+      letter-spacing: 0.2px;
+    }
+
+    .slot small { color: var(--muted); }
+
+    .status-pill {
+      font-size: 0.74rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+    }
+    .status-pill.booked { color: #2f5e3f; background: #e7f1e9; border-color: #bdd4c1; }
+    .status-pill.passed { color: #35503d; background: #e2ebdd; border-color: #afc5ae; }
+    .status-pill.pending { color: #7b6c3e; background: #f7f0dd; border-color: #d9c891; }
+    .status-pill.waitlisted { color: #6a4a2d; background: #f4e4d8; border-color: #d9b89d; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-top: 1px solid var(--line);
+      background: rgba(252, 250, 245, 0.96);
+      backdrop-filter: blur(6px);
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      padding: 8px 6px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .tab-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.72rem;
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      padding: 6px 4px;
+      border-radius: 8px;
+      min-height: 44px;
+    }
+
+    .tab-btn.active {
+      color: var(--forest);
+      background: #f0ece0;
+      font-weight: 700;
+    }
+
+    .tab-btn .icon { width: 19px; height: 19px; }
+
+    .inline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .glance-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 6px 0 12px;
+    }
+
+    .glance-chip {
+      border: 1px solid var(--line);
+      background: #f7f4eb;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      color: var(--forest);
+      font-weight: 700;
+    }
+
+    .collapse-card > summary {
+      list-style: none;
+      cursor: pointer;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .collapse-card > summary::-webkit-details-marker { display: none; }
+
+    .filter-drawer {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #faf8f2;
+      padding: 8px;
+    }
+    .filter-drawer > summary {
+      list-style: none;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--forest);
+      font-size: 0.9rem;
+    }
+    .filter-drawer > summary::-webkit-details-marker { display: none; }
+
+    .mobile-sticky-cta {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(66px + env(safe-area-inset-bottom));
+      z-index: 30;
+      display: none;
+      background: rgba(244, 241, 232, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      box-shadow: 0 8px 20px rgba(20, 29, 23, 0.08);
+    }
+
+    .screen.loading .card,
+    .screen.loading .skill-card,
+    .screen.loading .slot {
+      opacity: 0.45;
+      transition: opacity 0.15s ease;
+    }
+    .screen.loading::after {
+      content: "";
+      display: block;
+      height: 2px;
+      margin-top: 6px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      animation: shimmer 0.8s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-20%); opacity: 0.4; }
+      50% { opacity: 0.9; }
+      100% { transform: translateX(20%); opacity: 0.4; }
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .form-grid label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: grid;
+      gap: 5px;
+    }
+
+    input[type="date"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.86rem;
+      background: #fffdf8;
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    textarea {
+      min-height: 74px;
+      resize: vertical;
+    }
+
+    .log-list {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .log-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: #f8f5ed;
+      font-size: 0.84rem;
+    }
+    .bulk-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .btn-quiet {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 2px;
+      min-height: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .log-select-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast-wrap {
+      position: fixed;
+      right: 14px;
+      top: 14px;
+      z-index: 50;
+      display: grid;
+      gap: 8px;
+      width: min(320px, calc(100% - 28px));
+    }
+
+    .toast {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fbf8ef;
+      padding: 10px 12px;
+      font-size: 0.84rem;
+      color: var(--text);
+      box-shadow: 0 6px 18px rgba(23, 34, 28, 0.08);
+    }
+
+    .toast.success {
+      border-color: #b8cab9;
+      background: #eaf2eb;
+      color: #274533;
+    }
+
+    .toast.warn {
+      border-color: #d5b99d;
+      background: #f8ece3;
+      color: #704b2a;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(21, 30, 24, 0.34);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 70;
+      padding: 14px;
+    }
+
+    .modal {
+      width: min(520px, 100%);
+      max-height: calc(100vh - 28px);
+      overflow: auto;
+      background: #fcfaf4;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 10px 28px rgba(20, 29, 23, 0.14);
+    }
+
+    .guide-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--text);
+      line-height: 1.45;
+      font-size: 0.9rem;
+    }
+
+    @media (min-width: 760px) {
+      .topbar { padding: 16px 22px; }
+      main { padding: 22px; }
+      .skills-grid { grid-template-columns: repeat(2, 1fr); }
+      .dashboard-cols {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 14px;
+      }
+      .bottom-nav {
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(760px, 100%);
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        border-radius: 14px 14px 0 0;
+      }
+      .mobile-sticky-cta {
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(760px, calc(100% - 24px));
+      }
+      .filter-drawer { padding: 10px; }
+    }
+
+    @media (max-width: 759px) {
+      main { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="install-gate" id="installGate" aria-live="polite">
+    <div class="install-card">
+      <h1>Install Wild Hound</h1>
+      <p class="muted">Wild Hound can only be used from your home screen app.</p>
+      <div class="btn-row">
+        <button type="button" class="btn-primary" id="installAppBtn" style="display: none;">Add to Home Screen</button>
+      </div>
+      <p class="muted" id="installHint" style="margin-top: 8px;">Open your browser menu and choose Add to Home Screen.</p>
+      <ul class="guide-list">
+        <li><strong>iPhone:</strong> Tap Share, then <strong>Add to Home Screen</strong>.</li>
+        <li><strong>Android:</strong> Tap browser menu, then <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="7" cy="9" r="2"></circle>
+          <circle cx="17" cy="9" r="2"></circle>
+          <circle cx="12" cy="6" r="2"></circle>
+          <path d="M6 14c0 2.5 2 4 6 4s6-1.5 6-4c0-1.6-1-3-3-3H9c-2 0-3 1.4-3 3z"></path>
+        </svg>
+        Wild Hound
+      </div>
+    </header>
+
+    <main>
+      <section class="screen active" id="dashboard">
+        <h1>Dashboard</h1>
+        <div class="glance-row">
+          <span class="glance-chip" data-glance-rank>Rank: -</span>
+          <span class="glance-chip" data-glance-points>Points: 0</span>
+        </div>
+        <div class="card">
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div class="meta-label">User</div>
+              <div class="meta-inline">
+                <div class="meta-value" id="dashboardUserName">Casey Wilder</div>
+                <button type="button" class="btn-mini" id="dashboardEditUserBtn">Edit</button>
+              </div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Trail Dog Rank</div>
+              <div class="meta-value" id="rankLabel">Trail Dog Rookie</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Total Points</div>
+              <div class="meta-value" id="totalPoints">0</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Skills Unlocked</div>
+              <div class="meta-value" id="unlockedCount">0 / 14</div>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-text">
+              <span id="progressLabel">0 pts to Trail Dog Pathfinder</span>
+              <span id="progressPct">0%</span>
+            </div>
+            <div class="progress"><span id="rankProgress"></span></div>
+          </div>
+        </div>
+
+        <div class="dashboard-cols">
+          <div class="card highlight">
+            <h3>Current Monthly Skill</h3>
+            <p id="monthlySkillName">Loose Lead Walking</p>
+            <p class="muted" id="monthlySkillDesc">Smooth heel pace on mixed terrain.</p>
+          </div>
+
+          <div class="card">
+            <h3>Unlocked Skills</h3>
+            <div class="tag-list" id="unlockedSkillsTags"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Activity Snapshot</h3>
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div class="meta-label">Walks Booked</div>
+              <div class="meta-value" id="statWalksBooked">0</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Walks Attended</div>
+              <div class="meta-value" id="statWalksAttended">0</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Evidence Submitted</div>
+              <div class="meta-value" id="statEvidenceSubmitted">0</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Skills Passed</div>
+              <div class="meta-value" id="statSkillsPassed">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Refer a Friend</h3>
+          <p class="muted">Share your referral link and earn points when friends join.</p>
+          <div class="form-grid">
+            <label>
+              Your Referral Link
+              <input type="text" id="referralLinkInput" readonly />
+            </label>
+            <div class="btn-row" style="margin-top: 0;">
+              <button class="btn-secondary" type="button" id="copyReferralBtn">Copy Link</button>
+            </div>
+          </div>
+          <p class="muted" style="margin-top: 10px;">Referral Rewards: <span id="referralRewardCount">0</span></p>
+          <div class="log-list" id="referralHistoryList"></div>
+        </div>
+      </section>
+
+      <section class="screen" id="skills">
+        <h1>Skills Overview</h1>
+        <div class="glance-row">
+          <span class="glance-chip" data-glance-rank>Rank: -</span>
+          <span class="glance-chip" data-glance-points>Points: 0</span>
+        </div>
+        <p class="muted" style="margin-bottom: 12px;">14 Wild Hound skills arranged by progression.</p>
+        <div class="skills-grid" id="skillsGrid"></div>
+      </section>
+
+      <section class="screen" id="skill-detail">
+        <div class="btn-row" style="margin-top: 0; margin-bottom: 8px;">
+          <button class="btn-secondary" type="button" id="backToSkillsBtn">Back to Skills</button>
+        </div>
+        <h1 id="detailTitle">Skill Detail</h1>
+        <div class="glance-row">
+          <span class="glance-chip" data-glance-rank>Rank: -</span>
+          <span class="glance-chip" data-glance-points>Points: 0</span>
+        </div>
+        <div class="card">
+          <div class="inline" style="margin-bottom: 8px;">
+            <p class="muted" id="detailStatus">Unlocked</p>
+            <p class="muted">Points: <strong id="skillPoints">0</strong></p>
+          </div>
+          <p id="detailDescription"></p>
+          <div id="stepsContainer" style="margin-top: 10px;"></div>
+
+          <div class="card" style="margin-top: 10px; margin-bottom: 0;">
+            <h3 id="level5Heading">Level 5: Trail Ready Standard</h3>
+            <p id="trailStandardText">Demonstrate reliability in a real trail setting.</p>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-gold" id="submitEvidenceBtn">Submit Skill Evidence</button>
+            <button class="btn-secondary" id="practiceGainBtn">Log Practice</button>
+          </div>
+
+          <div class="card" id="practiceLogPanel" style="margin-top: 10px; display: none;">
+            <h3>Practice Log</h3>
+            <p class="muted">Track your self-practice sessions. Logging does not award points.</p>
+            <form id="practiceForm" class="form-grid">
+              <label>
+                Date
+                <input type="date" id="practiceDate" required />
+              </label>
+              <label>
+                Duration (minutes)
+                <input type="number" id="practiceDuration" min="5" step="5" value="20" required />
+              </label>
+              <label>
+                Focus Area
+                <select id="practiceFocus">
+                  <option value="Step 1 Criteria">Step 1 Criteria</option>
+                  <option value="Step 2 Criteria">Step 2 Criteria</option>
+                  <option value="Step 3 Criteria">Step 3 Criteria</option>
+                  <option value="Step 4 Criteria">Step 4 Criteria</option>
+                  <option value="Trail Ready Standard">Trail Ready Standard</option>
+                </select>
+              </label>
+              <label>
+                Notes
+                <textarea id="practiceNotes" placeholder="How did today go on trail?"></textarea>
+              </label>
+              <div class="btn-row" style="margin-top: 0;">
+                <button type="submit" class="btn-primary">Save Practice Log</button>
+                <button type="button" class="btn-secondary" id="closePracticePanelBtn">Cancel</button>
+              </div>
+            </form>
+            <details class="collapse-card" style="margin-top: 10px;">
+              <summary>Recent Logs (<span id="practiceLogCount">0</span>)</summary>
+              <div class="log-list" id="practiceLogList"></div>
+            </details>
+          </div>
+          <div class="badge-placeholder" id="skillBadgeBox">
+            Badge Icon Placeholder
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="rewards">
+        <h1>Points & Rewards</h1>
+        <div class="glance-row">
+          <span class="glance-chip" data-glance-rank>Rank: -</span>
+          <span class="glance-chip" data-glance-points>Points: 0</span>
+        </div>
+        <div class="card reward-hero">
+          <p class="reward-kicker">Trail Reward Journey</p>
+          <p class="reward-points"><span id="rewardPoints">0</span> pts</p>
+          <p class="muted" id="nextRewardText">Next reward in 0 points.</p>
+          <div class="progress-wrap" style="margin-top: 12px;">
+            <div class="progress-text">
+              <span id="rewardJourneyLabel">Progress to next reward</span>
+              <span id="rewardJourneyPct">0%</span>
+            </div>
+            <div class="progress"><span id="rewardJourneyProgress"></span></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-gold" type="button" id="jumpToBookingBtn">Book Your Next Walk</button>
+          </div>
+        </div>
+
+        <details class="card collapse-card" open>
+          <summary>Milestone Rewards</summary>
+          <p class="muted">Higher tiers now include gear, recognition, and premium trail experiences.</p>
+          <div class="ladder" id="rewardsLadder">
+            <div class="step" data-threshold="100">Trail Dog Rookie (100 pts) - Sticker</div>
+            <div class="step" data-threshold="250">Trail Dog Explorer (250 pts) - Patch</div>
+            <div class="step" data-threshold="500">Trail Dog Advanced (500 pts) - Mug</div>
+            <div class="step" data-threshold="600">Trail Dog Pathfinder (600 pts) - Personalized Trail Tag + Certificate</div>
+            <div class="step" data-threshold="900">Trail Dog Expert (900 pts) - Pro Gear Bundle + Club Spotlight</div>
+            <div class="step" data-threshold="1300">Trail Dog Master (1300 pts) - Master Trophy + 1:1 Assessment Day + Certificate</div>
+            <div class="step" data-kind="walks-attended" data-walks="10">Attend 10 Walks - Trail Commitment Crate (Bandana + Treat Pouch)</div>
+            <div class="step" data-kind="all-skills-pass">All 14 Skills Passed - Skills Mastery Medal + Hall of Fame Feature</div>
+          </div>
+        </details>
+
+        <details class="card collapse-card">
+          <summary>Points History</summary>
+          <div class="log-list" id="pointsHistoryList"></div>
+        </details>
+      </section>
+
+      <section class="screen" id="booking">
+        <h1>Assessments & Monthly Walks</h1>
+        <div class="glance-row">
+          <span class="glance-chip" data-glance-rank>Rank: -</span>
+          <span class="glance-chip" data-glance-points>Points: 0</span>
+        </div>
+        <div class="card">
+          <h3>Booking Overview</h3>
+          <p class="muted">See your upcoming bookings, available events, and past/completed events in one place.</p>
+          <details class="filter-drawer">
+            <summary>Filters</summary>
+            <div class="form-grid" style="margin-top: 10px;">
+              <label>
+                Event Type
+                <select id="bookingTypeFilter">
+                  <option value="all">All Events</option>
+                  <option value="assessment">Assessment Days</option>
+                  <option value="hillwalk">Monthly Hill Walks</option>
+                </select>
+              </label>
+              <label>
+                Status
+                <select id="bookingStatusFilter">
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Not Yet</option>
+                  <option value="booked">Booked</option>
+                  <option value="waitlisted">Waitlisted</option>
+                  <option value="passed">Passed</option>
+                </select>
+              </label>
+            </div>
+          </details>
+        </div>
+        <div class="slots" id="bookingEvents"></div>
+      </section>
+
+      <section class="screen" id="logged">
+        <h1>Logged Skills</h1>
+        <div class="glance-row">
+          <span class="glance-chip" data-glance-rank>Rank: -</span>
+          <span class="glance-chip" data-glance-points>Points: 0</span>
+        </div>
+        <div class="card">
+          <p class="muted">Review all saved practice logs by skill.</p>
+          <p style="margin-top: 6px;"><strong>Total Logged Sessions:</strong> <span id="totalLoggedSessions">0</span></p>
+          <div class="form-grid" style="margin-top: 8px;">
+            <label>
+              View Logs
+              <select id="loggedViewModeSelect">
+                <option value="skill">Group by Skill</option>
+                <option value="date">View by Date</option>
+              </select>
+            </label>
+          </div>
+          <div class="bulk-bar">
+            <button class="btn-quiet" type="button" id="toggleLogSelectModeBtn">Select Multiple</button>
+            <button class="btn-gold" type="button" id="deleteSelectedLogsBtn" style="display: none;">Delete Selected</button>
+            <span class="muted" id="selectedLogsCountText" style="display: none;">0 selected</span>
+          </div>
+        </div>
+        <div id="loggedSkillsList"></div>
+      </section>
+
+      <section class="screen" id="settings">
+        <h1>About & FAQ</h1>
+        <div class="glance-row">
+          <span class="glance-chip" data-glance-rank>Rank: -</span>
+          <span class="glance-chip" data-glance-points>Points: 0</span>
+        </div>
+
+        <details class="card highlight collapse-card" open>
+          <summary>Free Trail Packing Guide</summary>
+          <p class="muted">Download the Trail-Ready Dog Starter Guide (PDF packing list).</p>
+          <div class="btn-row">
+            <a
+              class="btn-primary"
+              href="https://dl.dropboxusercontent.com/scl/fi/8o96fvysdhv94dz4jczu3/Wild_Hound_Club_Trail-Ready_Dog_Starter_Guide.pdf?rlkey=dbtnhoxsv1hy1m5ttqctf0t7f&amp;st=yl8hnojm"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open Packing Guide
+            </a>
+          </div>
+        </details>
+
+        <details class="card collapse-card">
+          <summary>How Points Are Earned</summary>
+          <div id="pointsRuleSummary" class="muted" style="margin-top: 8px;"></div>
+        </details>
+
+        <details class="card collapse-card" open>
+          <summary>How Wild Hound Works</summary>
+          <ol class="guide-list">
+            <li>Unlock skills from the Skills screen or Dashboard.</li>
+            <li>Open an unlocked skill and complete practice steps.</li>
+            <li>Submit evidence once per skill, then pass assessment.</li>
+            <li>Book assessments and monthly walks from Booking.</li>
+            <li>Earn points from meaningful actions and milestones.</li>
+          </ol>
+        </details>
+
+        <details class="card collapse-card">
+          <summary>Unlocking Skills</summary>
+          <ul class="guide-list">
+            <li><strong>Unlock via walk:</strong> attend a booked monthly hill walk linked to that skill.</li>
+            <li><strong>Unlock via purchase:</strong> use the Unlock button on locked skills in Skills.</li>
+            <li>Attending a booked monthly hill walk can unlock that walk's related skill.</li>
+            <li>Locked skills stay dimmed until unlocked.</li>
+          </ul>
+        </details>
+
+        <details class="card collapse-card">
+          <summary>Booking Walks & Assessments</summary>
+          <ul class="guide-list">
+            <li>Booking combines assessments and monthly hill walks in chronological order.</li>
+            <li>Each hill walk shows the skill focus.</li>
+            <li>Status updates as Not Yet, Booked, or Passed.</li>
+          </ul>
+        </details>
+
+        <details class="card collapse-card">
+          <summary>Points & Progression</summary>
+          <ul class="guide-list">
+            <li>Core progression actions carry the highest weight.</li>
+            <li>Evidence and assessment points are limited per skill.</li>
+            <li>Milestone bonuses are awarded at 3, 7, and 14 passed skills.</li>
+            <li>Rank bonuses trigger at Pathfinder (600), Expert (900), and Master (1300) thresholds.</li>
+            <li>Practice logging is for tracking only and does not award points.</li>
+          </ul>
+        </details>
+
+        <details class="card collapse-card">
+          <summary>What Is Not Rewarded</summary>
+          <ul class="guide-list">
+            <li>Unlimited evidence submissions</li>
+            <li>Daily logging spam</li>
+            <li>Chat comments</li>
+            <li>Passive activity</li>
+          </ul>
+        </details>
+      </section>
+    </main>
+  </div>
+
+  <div class="mobile-sticky-cta" id="mobileStickyCta">
+    <button class="btn-gold" type="button" id="mobileStickyCtaBtn">Book In For Skill Assessment</button>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="tab-btn active" data-screen="dashboard">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg>
+      Home
+    </button>
+    <button class="tab-btn" data-screen="skills">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+      Skills
+    </button>
+    <button class="tab-btn" data-screen="rewards">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 3l3 6 6 .9-4.4 4.2 1 6L12 17l-5.6 3.1 1-6L3 9.9 9 9z"></path></svg>
+      Rewards
+    </button>
+    <button class="tab-btn" data-screen="booking">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M7 3v4"></path><path d="M17 3v4"></path><path d="M3 10h18"></path></svg>
+      Booking
+    </button>
+    <button class="tab-btn" data-screen="logged">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><circle cx="4" cy="6" r="1.5"></circle><circle cx="4" cy="12" r="1.5"></circle><circle cx="4" cy="18" r="1.5"></circle></svg>
+      Logged
+    </button>
+    <button class="tab-btn" data-screen="settings">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3v2.2"></path><path d="M12 18.8V21"></path><path d="M3 12h2.2"></path><path d="M18.8 12H21"></path><path d="M5.8 5.8l1.6 1.6"></path><path d="M16.6 16.6l1.6 1.6"></path><path d="M18.2 5.8l-1.6 1.6"></path><path d="M7.4 16.6l-1.6 1.6"></path></svg>
+      About
+    </button>
+  </nav>
+  <div class="toast-wrap" id="toastWrap"></div>
+  <div class="modal-backdrop" id="logEditModalBackdrop">
+    <div class="modal">
+      <h3>Edit Log</h3>
+      <form id="logEditForm" class="form-grid">
+        <label>
+          Skill
+          <select id="logEditSkill" required></select>
+        </label>
+        <label>
+          Date
+          <input type="date" id="logEditDate" required />
+        </label>
+        <label>
+          Step
+          <select id="logEditStep">
+            <option value="Step 1 Criteria">Step 1 Criteria</option>
+            <option value="Step 2 Criteria">Step 2 Criteria</option>
+            <option value="Step 3 Criteria">Step 3 Criteria</option>
+            <option value="Step 4 Criteria">Step 4 Criteria</option>
+            <option value="Trail Ready Standard">Trail Ready Standard</option>
+          </select>
+        </label>
+        <label>
+          Duration (minutes)
+          <input type="number" id="logEditDuration" min="1" required />
+        </label>
+        <label>
+          Comment
+          <textarea id="logEditComment"></textarea>
+        </label>
+        <div class="btn-row" style="margin-top: 0;">
+          <button type="submit" class="btn-primary">Save Changes</button>
+          <button type="button" class="btn-secondary" id="cancelLogEditBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      user: "Casey Wilder",
+      points: 90,
+      selectedSkillId: 1,
+      practicePanelOpen: false,
+      bookingFilters: { type: "all", status: "all" },
+      rankBonusesAwarded: { bronze: false, silver: false, gold: false },
+      completionMilestonesAwarded: { three: false, seven: false, all: false },
+      awardedEvents: {},
+      skillEvidenceSubmitted: {},
+      skillAssessmentsPassed: { 1: true },
+      skillStepChecks: {},
+      loggedSkillLimits: {},
+      loggedDateLimit: 30,
+      loggedViewMode: "skill",
+      logSelectionMode: false,
+      selectedLogIds: {},
+      logEditContext: null,
+      referrals: [],
+      pointsHistory: [],
+      toasts: [],
+      bookedSlotIds: [2],
+      passedSlotIds: [4],
+      practiceLogs: {
+        1: [
+          { date: "2026-02-20", duration: 25, focus: "Step 1 Criteria", notes: "Held loose lead on gravel path for most of session.", loggedAt: "2026-02-20T09:00:00" }
+        ]
+      },
+      skills: [
+        { id: 1, name: "Loose Lead Walking", desc: "Steady pacing with line awareness.", unlocked: true, points: 60, progressStatus: "passed" },
+        { id: 2, name: "Reliable Recall", desc: "Immediate return from scent distractions.", unlocked: true, points: 8, progressStatus: "not_started" },
+        { id: 3, name: "Trail Focus", desc: "Eyes and ears on handler cues.", unlocked: true, points: 24, progressStatus: "needs_more_work" },
+        { id: 4, name: "Hill Climb Control", desc: "Safe ascents with calm pulls.", unlocked: true, points: 12, progressStatus: "in_progress" },
+        { id: 5, name: "Water Entry Confidence", desc: "Controlled stream and shoreline entry.", unlocked: false, points: 0 },
+        { id: 6, name: "Bridge Crossing", desc: "Balanced crossing over unstable surfaces.", unlocked: false, points: 0 },
+        { id: 7, name: "Campsite Settle", desc: "Calm rest mode around camp activity.", unlocked: false, points: 0 },
+        { id: 8, name: "Wildlife Neutrality", desc: "Ignore moving wildlife at distance.", unlocked: false, points: 0 },
+        { id: 9, name: "Night Trail Confidence", desc: "Composed movement in low visibility.", unlocked: false, points: 0 },
+        { id: 10, name: "Pack Carry Basics", desc: "Comfort walking with balanced pack.", unlocked: false, points: 0 },
+        { id: 11, name: "Off-Lead Boundaries", desc: "Stay within safe range automatically.", unlocked: false, points: 0 },
+        { id: 12, name: "Rest Break Recovery", desc: "Settle quickly and recover energy.", unlocked: false, points: 0 },
+        { id: 13, name: "Weather Readiness", desc: "Adapt behavior in wind, rain, heat.", unlocked: false, points: 0 },
+        { id: 14, name: "Trail Partner Etiquette", desc: "Pass hikers and dogs politely.", unlocked: false, points: 0 }
+      ],
+      slots: [
+        { id: 1, day: "Saturday, Mar 7", time: "8:00 AM", dateISO: "2026-03-07", location: "Pine Ridge Trail", status: "pending", capacity: 10, bookedCount: 9, waitlistCount: 0 },
+        { id: 2, day: "Saturday, Mar 7", time: "9:30 AM", dateISO: "2026-03-07", location: "Pine Ridge Trail", status: "booked", capacity: 10, bookedCount: 8, waitlistCount: 0 },
+        { id: 3, day: "Sunday, Mar 15", time: "10:00 AM", dateISO: "2026-03-15", location: "North Bluff Loop", status: "pending", capacity: 8, bookedCount: 8, waitlistCount: 2 },
+        { id: 4, day: "Sunday, Mar 15", time: "11:30 AM", dateISO: "2026-03-15", location: "North Bluff Loop", status: "passed", capacity: 8, bookedCount: 7, waitlistCount: 0 }
+      ],
+      monthlyWalks: [
+        { id: 101, month: "March Hill Walk", day: "Sunday, Mar 22", time: "7:30 AM", dateISO: "2026-03-22", location: "Cedar Ridge", skill: "Hill Climb Control", status: "pending", capacity: 12, bookedCount: 11, waitlistCount: 0 },
+        { id: 102, month: "April Hill Walk", day: "Sunday, Apr 19", time: "8:00 AM", dateISO: "2026-04-19", location: "Falcon Bluff", skill: "Loose Lead Walking", status: "pending", capacity: 12, bookedCount: 12, waitlistCount: 3 },
+        { id: 103, month: "May Hill Walk", day: "Sunday, May 17", time: "8:30 AM", dateISO: "2026-05-17", location: "Summit Spur", skill: "Trail Focus", status: "booked", capacity: 12, bookedCount: 9, waitlistCount: 0 }
+      ]
+    };
+
+    const POINT_RULES = {
+      core: [
+        { key: "walk_attendance", label: "Walk Attendance", points: 12 },
+        { key: "unlock_skill_walk", label: "Unlock Skill (via walk)", points: 24 },
+        { key: "unlock_skill_purchase", label: "Unlock Skill (via purchase)", points: 16 },
+        { key: "submit_skill_evidence", label: "Submit Skill Evidence (once per skill)", points: 18, oncePerSkill: true },
+        { key: "pass_skill_assessment", label: "Pass Skill Assessment", points: 30, oncePerSkill: true },
+        { key: "complete_3_skills", label: "Complete 3 Skills (Milestone Bonus)", points: 40, oneTime: true },
+        { key: "complete_7_skills", label: "Complete 7 Skills (Mid Milestone Bonus)", points: 75, oneTime: true },
+        { key: "complete_all_skills", label: "Complete All 14 Skills (Master Bonus)", points: 160, oneTime: true },
+        { key: "attend_skill_testing_day", label: "Attend Skill Testing Day", points: 14 },
+        { key: "pass_bronze_rank", label: "Pass Trail Dog Pathfinder Rank", points: 30, oneTime: true },
+        { key: "pass_silver_rank", label: "Pass Trail Dog Expert Rank", points: 55, oneTime: true },
+        { key: "pass_gold_rank", label: "Pass Trail Dog Master Rank", points: 90, oneTime: true }
+      ],
+      engagement: [
+        { key: "attend_3_walks_season", label: "Attend 3 Walks in a Season", points: 22, oneTime: true },
+        { key: "attend_5_walks_total", label: "Attend 5 Walks Total", points: 35, oneTime: true },
+        { key: "attend_first_walk", label: "Attend First Walk Ever (Welcome Bonus)", points: 20, oneTime: true },
+        { key: "book_walk_early", label: "Book Walk Early (14+ days)", points: 10 },
+        { key: "complete_2_skills_consecutive_months", label: "Complete 2 Skills in Consecutive Months", points: 30, oneTime: true },
+        { key: "submit_reflection_after_walk", label: "Submit Reflection After Walk (1 per walk)", points: 8 },
+        { key: "help_at_walk", label: "Help at a Walk (Gate/Demo/Support)", points: 18 },
+        { key: "trail_etiquette_recognition", label: "Trail Etiquette Recognition", points: 15 }
+      ],
+      growth: [
+        { key: "refer_friend_books", label: "Refer a Friend Who Books", points: 40 },
+        { key: "refer_friend_unlocks_skill", label: "Refer a Friend Who Unlocks a Skill", points: 70 },
+        { key: "share_certificate_social", label: "Share Certificate on Social Media", points: 12, oneTime: true },
+        { key: "bring_new_dog_walk", label: "Bring a New Dog to a Walk", points: 28 },
+        { key: "leave_testimonial", label: "Leave a Testimonial", points: 14, oneTime: true }
+      ],
+      bonus: [
+        { key: "seasonal_challenge_completion", label: "Seasonal Challenge Completion", points: 28 },
+        { key: "surprise_bonus_walk", label: "Surprise Bonus Awarded at Walk", points: 10 },
+        { key: "complete_skill_of_month", label: "Complete Skill of the Month", points: 22 },
+        { key: "attend_special_event", label: "Attend Special Event / Guest Trainer Day", points: 26 },
+        { key: "community_poll_vote", label: "Participate in Community Poll / Vote", points: 3 }
+      ]
+    };
+
+    const POINT_MAP = Object.fromEntries(
+      Object.values(POINT_RULES).flat().map(rule => [rule.key, rule])
+    );
+
+    const SAVED_USERNAME_KEY = "wildhound_username";
+    const SAVED_APP_STATE_KEY = "wildhound_app_state_v1";
+    let deferredInstallPrompt = null;
+
+    function loadPersistedState() {
+      try {
+        const raw = localStorage.getItem(SAVED_APP_STATE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          const keys = [
+            "user", "points", "selectedSkillId", "practicePanelOpen", "bookingFilters",
+            "rankBonusesAwarded", "completionMilestonesAwarded", "awardedEvents",
+            "skillEvidenceSubmitted", "skillAssessmentsPassed", "skillStepChecks", "pointsHistory",
+            "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "slots", "monthlyWalks", "referrals",
+            "loggedSkillLimits", "loggedDateLimit", "loggedViewMode"
+          ];
+          keys.forEach((key) => {
+            if (saved[key] !== undefined) state[key] = saved[key];
+          });
+        } else {
+          const savedName = localStorage.getItem(SAVED_USERNAME_KEY);
+          if (savedName && savedName.trim()) state.user = savedName.trim();
+        }
+      } catch (e) {
+        // Ignore storage access issues in preview environments.
+      }
+      state.toasts = [];
+    }
+
+    function persistState() {
+      try {
+        const snapshot = {
+          user: state.user,
+          points: state.points,
+          selectedSkillId: state.selectedSkillId,
+          practicePanelOpen: state.practicePanelOpen,
+          bookingFilters: state.bookingFilters,
+          rankBonusesAwarded: state.rankBonusesAwarded,
+          completionMilestonesAwarded: state.completionMilestonesAwarded,
+          awardedEvents: state.awardedEvents,
+          skillEvidenceSubmitted: state.skillEvidenceSubmitted,
+          skillAssessmentsPassed: state.skillAssessmentsPassed,
+          skillStepChecks: state.skillStepChecks,
+          referrals: state.referrals,
+          pointsHistory: state.pointsHistory,
+          bookedSlotIds: state.bookedSlotIds,
+          passedSlotIds: state.passedSlotIds,
+          practiceLogs: state.practiceLogs,
+          loggedSkillLimits: state.loggedSkillLimits,
+          loggedDateLimit: state.loggedDateLimit,
+          loggedViewMode: state.loggedViewMode,
+          skills: state.skills,
+          slots: state.slots,
+          monthlyWalks: state.monthlyWalks
+        };
+        localStorage.setItem(SAVED_APP_STATE_KEY, JSON.stringify(snapshot));
+      } catch (e) {
+        // Ignore storage access issues in preview environments.
+      }
+    }
+
+    function isStandaloneMode() {
+      return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    }
+
+    function updateInstallGate() {
+      const blocked = !isStandaloneMode();
+      document.body.classList.toggle("install-gated", blocked);
+      const installBtn = document.getElementById("installAppBtn");
+      const hint = document.getElementById("installHint");
+      if (!installBtn || !hint) return blocked;
+
+      const canPrompt = !!deferredInstallPrompt;
+      installBtn.style.display = canPrompt ? "inline-block" : "none";
+      hint.textContent = canPrompt
+        ? "Tap Add to Home Screen, then open Wild Hound from your home screen."
+        : "Open your browser menu and choose Add to Home Screen.";
+      return blocked;
+    }
+
+    function applyPinnedSkillStates() {
+      const byName = (name) => state.skills.find((s) => s.name === name);
+      const looseLead = byName("Loose Lead Walking");
+      const trailFocus = byName("Trail Focus");
+      const hillClimb = byName("Hill Climb Control");
+
+      if (looseLead) {
+        looseLead.unlocked = true;
+        looseLead.progressStatus = "passed";
+        state.skillAssessmentsPassed[looseLead.id] = true;
+      }
+      if (trailFocus) {
+        trailFocus.unlocked = true;
+        trailFocus.progressStatus = "needs_more_work";
+        delete state.skillAssessmentsPassed[trailFocus.id];
+        state.skillEvidenceSubmitted[trailFocus.id] = true;
+      }
+      if (hillClimb) {
+        hillClimb.unlocked = true;
+        hillClimb.progressStatus = "in_progress";
+      }
+
+      if (looseLead) {
+        state.skillStepChecks[looseLead.id] = { 1: [true, true, true], 2: [true, true, true], 3: [true, true, true], 4: [true, true, true] };
+      }
+      if (trailFocus) {
+        state.skillStepChecks[trailFocus.id] = { 1: [true, true, true], 2: [true, true, true], 3: [true, true, true], 4: [true, true, true] };
+      }
+      if (hillClimb) {
+        state.skillStepChecks[hillClimb.id] = { 1: [true, true, true], 2: [true, false, false], 3: [false, false, false], 4: [false, false, false] };
+      }
+    }
+
+    function ensurePracticeLogIds() {
+      Object.keys(state.practiceLogs || {}).forEach((skillId) => {
+        state.practiceLogs[skillId] = (state.practiceLogs[skillId] || []).map((log, idx) => ({
+          ...log,
+          id: log.id || `${skillId}-${log.loggedAt || log.date || "log"}-${idx}`
+        }));
+      });
+    }
+
+    loadPersistedState();
+    applyPinnedSkillStates();
+    ensurePracticeLogIds();
+
+    const stepTemplates = [
+      ["Maintains heel for 2 minutes on flat path.", "Responds to pace changes.", "No leash tension for 3 cycles."],
+      ["Returns on first cue from 10m distance.", "Returns from mild distractions.", "Holds sit on return."],
+      ["Checks in every 20 seconds.", "Responds to directional cue.", "Keeps distance from edge zones."],
+      ["Climbs calmly without lunging.", "Pauses on cue midway.", "Descends under control."]
+    ];
+
+    function getRank(points) {
+      if (points >= 1300 && hasMasterRequirements()) return { name: "Trail Dog Master", min: 1300, next: null, nextName: null };
+      if (points >= 900) return { name: "Trail Dog Expert", min: 900, next: 1300, nextName: "Trail Dog Master" };
+      if (points >= 600) return { name: "Trail Dog Pathfinder", min: 600, next: 900, nextName: "Trail Dog Expert" };
+      return { name: "Trail Dog Rookie", min: 0, next: 600, nextName: "Trail Dog Pathfinder" };
+    }
+
+    function nextSkillToUnlock() {
+      return state.skills.find(s => !s.unlocked);
+    }
+
+    function unlockedSkills() {
+      return state.skills.filter(s => s.unlocked);
+    }
+
+    function walksAttendedCount() {
+      return state.monthlyWalks.filter(w => w.status === "passed").length;
+    }
+
+    function hasMasterRequirements() {
+      return unlockedSkills().length >= 14 && walksAttendedCount() >= 5;
+    }
+
+    function getReferralLink() {
+      const token = (state.user || "traildog")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 24) || "traildog";
+      return `https://wildhound.club/join?ref=${token}`;
+    }
+
+    function updatePoints(delta) {
+      const before = state.points;
+      state.points += delta;
+      if (state.points < 0) state.points = 0;
+      if (!hasMasterRequirements() && state.points > 1299) state.points = 1299;
+      if (state.points > 1300) state.points = 1300;
+      return state.points - before;
+    }
+
+    function showToast(message, tone = "success") {
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      state.toasts.push({ id, message, tone });
+      renderToasts();
+      setTimeout(() => {
+        state.toasts = state.toasts.filter(t => t.id !== id);
+        renderToasts();
+      }, 2400);
+    }
+
+    function renderToasts() {
+      const wrap = document.getElementById("toastWrap");
+      if (!wrap) return;
+      wrap.innerHTML = state.toasts.map(t => `<div class="toast ${t.tone}">${t.message}</div>`).join("");
+    }
+
+    function awardEvent(eventKey, options = {}) {
+      const rule = POINT_MAP[eventKey];
+      if (!rule) return false;
+
+      if (rule.oneTime && state.awardedEvents[eventKey]) return false;
+      if (rule.oncePerSkill) {
+        const skillId = options.skillId;
+        if (!skillId) return false;
+        if (eventKey === "submit_skill_evidence" && state.skillEvidenceSubmitted[skillId]) return false;
+        if (eventKey === "pass_skill_assessment" && state.skillAssessmentsPassed[skillId]) return false;
+      }
+
+      const appliedPoints = updatePoints(rule.points);
+      if (appliedPoints <= 0) return false;
+      const historyId = `${Date.now()}-${Math.random().toString(16).slice(2, 9)}`;
+      state.pointsHistory.unshift({
+        id: historyId,
+        label: rule.label,
+        points: appliedPoints,
+        when: new Date().toLocaleString(),
+        sourceKey: options.sourceKey || null
+      });
+      showToast(`+${appliedPoints} pts: ${rule.label}`);
+      if (rule.oneTime) state.awardedEvents[eventKey] = true;
+      if (eventKey === "submit_skill_evidence" && options.skillId) state.skillEvidenceSubmitted[options.skillId] = true;
+      if (eventKey === "pass_skill_assessment" && options.skillId) state.skillAssessmentsPassed[options.skillId] = true;
+
+      applyAutoMilestones();
+      applyAutoRankBonuses();
+      renderAll();
+      return historyId;
+    }
+
+    function removePointsHistoryByIds(historyIds) {
+      if (!Array.isArray(historyIds) || !historyIds.length) return 0;
+      const idSet = new Set(historyIds.map(String));
+      let removedPoints = 0;
+      state.pointsHistory = state.pointsHistory.filter((entry) => {
+        if (entry && entry.id && idSet.has(String(entry.id))) {
+          removedPoints += Number(entry.points) || 0;
+          return false;
+        }
+        return true;
+      });
+      if (removedPoints > 0) updatePoints(-removedPoints);
+      return removedPoints;
+    }
+
+    function getLogTimestamp(log) {
+      if (!log) return 0;
+      if (log.loggedAt) return new Date(log.loggedAt).getTime();
+      if (log.date) return new Date(`${log.date}T00:00:00`).getTime();
+      return 0;
+    }
+
+    function removePracticeLogPointsIfEligible(log) {
+      if (!log || !log.pointHistoryId) return 0;
+      const loggedTime = getLogTimestamp(log);
+      if (!loggedTime) return 0;
+      const withinFourteenDays = (Date.now() - loggedTime) <= (14 * 24 * 60 * 60 * 1000);
+      if (!withinFourteenDays) return 0;
+      return removePointsHistoryByIds([log.pointHistoryId]);
+    }
+
+    function applyAutoMilestones() {
+      const completed = Object.keys(state.skillAssessmentsPassed).length;
+      if (completed >= 3 && !state.completionMilestonesAwarded.three) {
+        state.completionMilestonesAwarded.three = true;
+        awardEvent("complete_3_skills");
+      }
+      if (completed >= 7 && !state.completionMilestonesAwarded.seven) {
+        state.completionMilestonesAwarded.seven = true;
+        awardEvent("complete_7_skills");
+      }
+      if (completed >= 14 && !state.completionMilestonesAwarded.all) {
+        state.completionMilestonesAwarded.all = true;
+        awardEvent("complete_all_skills");
+      }
+    }
+
+    function applyAutoRankBonuses() {
+      if (state.points >= 600 && !state.rankBonusesAwarded.bronze) {
+        state.rankBonusesAwarded.bronze = true;
+        awardEvent("pass_bronze_rank");
+      }
+      if (state.points >= 900 && !state.rankBonusesAwarded.silver) {
+        state.rankBonusesAwarded.silver = true;
+        awardEvent("pass_silver_rank");
+      }
+      if (state.points >= 1300 && hasMasterRequirements() && !state.rankBonusesAwarded.gold) {
+        state.rankBonusesAwarded.gold = true;
+        awardEvent("pass_gold_rank");
+      }
+    }
+
+    function unlockSkill(skillId, source = "walk") {
+      const skill = state.skills.find(s => s.id === skillId);
+      if (!skill || skill.unlocked) return;
+      skill.unlocked = true;
+      awardEvent(source === "purchase" ? "unlock_skill_purchase" : "unlock_skill_walk");
+      showToast(`Unlocked: ${skill.name}`);
+      if (!state.selectedSkillId) state.selectedSkillId = skillId;
+    }
+
+    function showScreen(screenId) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      const activeScreen = document.querySelector(`#${screenId}`);
+      activeScreen.classList.add("active");
+      activeScreen.classList.add("loading");
+      setTimeout(() => activeScreen.classList.remove("loading"), 140);
+      const activeTab = screenId === "skill-detail" ? "skills" : screenId;
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.screen === activeTab);
+      });
+      updateStickyCta();
+    }
+
+    function renderDashboard() {
+      const rank = getRank(state.points);
+      const unlocked = unlockedSkills();
+      const locked = state.skills.filter(s => !s.unlocked);
+      const allEvents = [...state.slots, ...state.monthlyWalks];
+      const walksBooked = allEvents.filter(e => e.status === "booked" || e.status === "passed").length;
+      const walksAttended = allEvents.filter(e => e.status === "passed").length;
+      const walksNeededForMaster = Math.max(0, 5 - walksAttendedCount());
+      const skillsNeededForMaster = Math.max(0, 14 - unlocked.length);
+      const evidenceSubmitted = Object.keys(state.skillEvidenceSubmitted).length;
+      const skillsPassed = Object.keys(state.skillAssessmentsPassed).length;
+      const nextRank = rank.next;
+      const start = rank.min;
+      const end = nextRank || rank.min;
+      const pct = nextRank ? Math.max(0, Math.min(100, ((state.points - start) / (end - start)) * 100)) : 100;
+
+      document.getElementById("rankLabel").textContent = rank.name;
+      document.getElementById("totalPoints").textContent = state.points;
+      document.getElementById("unlockedCount").textContent = `${unlocked.length} / ${state.skills.length}`;
+      document.getElementById("dashboardUserName").textContent = state.user;
+      document.getElementById("statWalksBooked").textContent = walksBooked;
+      document.getElementById("statWalksAttended").textContent = walksAttended;
+      document.getElementById("statEvidenceSubmitted").textContent = evidenceSubmitted;
+      document.getElementById("statSkillsPassed").textContent = skillsPassed;
+      document.getElementById("referralLinkInput").value = getReferralLink();
+      document.getElementById("referralRewardCount").textContent = state.referrals.length;
+      const referralHistory = document.getElementById("referralHistoryList");
+      referralHistory.innerHTML = state.referrals.length
+        ? state.referrals.slice(0, 5).map(entry => `
+          <div class="log-item">
+            <strong>${entry.name}</strong> - ${entry.eventLabel} (+${entry.points})
+            <div class="muted">${entry.when}</div>
+          </div>
+        `).join("")
+        : `<div class="log-item">No referral rewards yet.</div>`;
+      document.getElementById("rankProgress").style.width = `${pct}%`;
+      document.getElementById("progressPct").textContent = `${Math.round(pct)}%`;
+      document.getElementById("progressLabel").textContent = nextRank
+        ? `${Math.max(0, nextRank - state.points)} pts to ${rank.nextName}`
+        : "Trail Dog Master Achieved";
+      if (rank.nextName === "Trail Dog Master" && state.points >= 1299 && !hasMasterRequirements()) {
+        document.getElementById("progressLabel").textContent = `Master unlock needs ${skillsNeededForMaster} skills + ${walksNeededForMaster} walks`;
+      }
+
+      const monthly = nextSkillToUnlock() || state.skills[0];
+      document.getElementById("monthlySkillName").textContent = monthly.name;
+      document.getElementById("monthlySkillDesc").textContent = monthly.desc;
+
+      const unlockedTags = document.getElementById("unlockedSkillsTags");
+      unlockedTags.innerHTML = unlocked.map(s => `<span class="tag">${s.name}</span>`).join("");
+    }
+
+    function renderGlanceChips() {
+      const rank = getRank(state.points);
+      document.querySelectorAll("[data-glance-rank]").forEach(el => {
+        el.textContent = `Rank: ${rank.name}`;
+      });
+      document.querySelectorAll("[data-glance-points]").forEach(el => {
+        el.textContent = `Points: ${state.points}`;
+      });
+    }
+
+    function getProgressMeta(skill) {
+      if (!skill || !skill.unlocked) return null;
+      const status = skill.progressStatus;
+      if (status === "passed") return { text: "Passed", className: "passed" };
+      if (status === "needs_more_work") return { text: "Needs More Work", className: "needs-more-work" };
+      if (status === "in_progress") return { text: "In Progress", className: "in-progress" };
+      if (status === "not_started") return { text: "Not Started", className: "not-started" };
+      return { text: "Not Started", className: "not-started" };
+    }
+
+    function renderSkills() {
+      const container = document.getElementById("skillsGrid");
+      container.innerHTML = state.skills.map(skill => {
+        const progress = skill.unlocked ? getProgressMeta(skill) : null;
+        const statusClass = !skill.unlocked
+          ? "locked"
+          : `status-${(skill.progressStatus || "not_started").replaceAll("_", "-")}`;
+        return `
+        <article class="skill-card ${statusClass}">
+          <div class="inline">
+            <h3 style="margin:0">${skill.name}</h3>
+            <span class="status ${skill.unlocked ? progress.className : "locked"}">${skill.unlocked ? progress.text : "Locked"}</span>
+          </div>
+          <p class="muted">${skill.desc}</p>
+          <div class="btn-row">
+            ${skill.unlocked
+              ? `<button class="btn-secondary" data-action="view-skill" data-id="${skill.id}">View Skill</button>`
+              : `<button class="btn-primary" data-action="unlock-skill" data-id="${skill.id}">Unlock Skill</button>`}
+          </div>
+        </article>
+      `;
+      }).join("");
+    }
+
+    function findSkillByName(name) {
+      return state.skills.find(skill => skill.name === name);
+    }
+
+    function getSkillStepChecks(skillId) {
+      if (!state.skillStepChecks[skillId]) {
+        const base = {
+          1: [false, false, false],
+          2: [false, false, false],
+          3: [false, false, false],
+          4: [false, false, false]
+        };
+        if (skillId === 1 || skillId === 3) {
+          base[1] = [true, true, true];
+          base[2] = [true, true, true];
+          base[3] = [true, true, true];
+          base[4] = [true, true, true];
+        }
+        if (skillId === 4) {
+          base[1] = [true, true, true];
+          base[2] = [true, false, false];
+        }
+        state.skillStepChecks[skillId] = {
+          1: base[1],
+          2: base[2],
+          3: base[3],
+          4: base[4]
+        };
+      }
+      return state.skillStepChecks[skillId];
+    }
+
+    function isStepComplete(skillId, stepNum) {
+      const checks = getSkillStepChecks(skillId);
+      return checks[stepNum].every(Boolean);
+    }
+
+    function isStepUnlocked(skillId, stepNum) {
+      if (stepNum === 1) return true;
+      return isStepComplete(skillId, stepNum - 1);
+    }
+
+    function buildSteps(skillId) {
+      const set = stepTemplates[(skillId - 1) % stepTemplates.length];
+      const checks = getSkillStepChecks(skillId);
+      return [1, 2, 3, 4].map((stepNum, i) => `
+        <details class="${isStepUnlocked(skillId, stepNum) ? "" : "step-locked"}" ${stepNum === 1 || (stepNum > 1 && isStepUnlocked(skillId, stepNum) && !isStepComplete(skillId, stepNum)) ? "open" : ""}>
+          <summary>Step ${stepNum} Self-Practice Criteria ${isStepComplete(skillId, stepNum) ? "✓" : (isStepUnlocked(skillId, stepNum) ? "" : "(Locked)")}</summary>
+          <div class="checklist">
+            <label class="check-item"><input type="checkbox" data-step="${stepNum}" data-item="0" ${checks[stepNum][0] ? "checked" : ""} ${isStepUnlocked(skillId, stepNum) ? "" : "disabled"}> ${set[0]} (variation ${stepNum})</label>
+            <label class="check-item"><input type="checkbox" data-step="${stepNum}" data-item="1" ${checks[stepNum][1] ? "checked" : ""} ${isStepUnlocked(skillId, stepNum) ? "" : "disabled"}> ${set[1]} (variation ${stepNum})</label>
+            <label class="check-item"><input type="checkbox" data-step="${stepNum}" data-item="2" ${checks[stepNum][2] ? "checked" : ""} ${isStepUnlocked(skillId, stepNum) ? "" : "disabled"}> ${set[2]} (variation ${stepNum})</label>
+          </div>
+        </details>
+      `).join("");
+    }
+
+    function renderSkillDetail() {
+      let selected = state.skills.find(s => s.id === state.selectedSkillId);
+      if (!selected || !selected.unlocked) {
+        selected = unlockedSkills()[0];
+        if (selected) state.selectedSkillId = selected.id;
+      }
+
+      if (!selected) {
+        document.getElementById("detailTitle").textContent = "No Unlocked Skills Yet";
+        document.getElementById("detailDescription").textContent = "Unlock a skill from Skills Overview to begin.";
+        document.getElementById("detailStatus").textContent = "Locked";
+        document.getElementById("stepsContainer").innerHTML = "";
+        document.getElementById("trailStandardText").textContent = "Unlock your first skill to view standards.";
+        document.getElementById("skillPoints").textContent = "0";
+        document.getElementById("submitEvidenceBtn").disabled = true;
+        document.getElementById("submitEvidenceBtn").style.display = "none";
+        document.getElementById("submitEvidenceBtn").textContent = "Book In For Skill Assessment";
+        const badgeBox = document.getElementById("skillBadgeBox");
+        badgeBox.classList.remove("earned");
+        badgeBox.innerHTML = "Badge Icon Placeholder";
+        document.getElementById("practiceLogPanel").style.display = "none";
+        updateStickyCta();
+        return;
+      }
+
+      document.getElementById("detailTitle").textContent = selected.name;
+      document.getElementById("detailDescription").textContent = selected.desc;
+      document.getElementById("detailStatus").textContent = selected.unlocked ? getProgressMeta(selected).text : "Locked";
+      document.getElementById("skillPoints").textContent = selected.points;
+      document.getElementById("stepsContainer").innerHTML = buildSteps(selected.id);
+      const allStepsComplete = [1, 2, 3, 4].every(step => isStepComplete(selected.id, step));
+      const isPassed = selected.progressStatus === "passed";
+      document.getElementById("level5Heading").textContent = isPassed
+        ? "Level 5: Trail Ready Standard ✓"
+        : "Level 5: Trail Ready Standard";
+      document.getElementById("trailStandardText").textContent = isPassed
+        ? `${selected.name} has passed Level 5 and is trail-certified.`
+        : allStepsComplete
+          ? `Ready for Level 5. Complete a live trail scenario for ${selected.name}.`
+          : `Trail Ready Standard locked until Steps 1-4 are fully completed for ${selected.name}.`;
+      const evidenceDone = Boolean(state.skillEvidenceSubmitted[selected.id]);
+      const evidenceBtn = document.getElementById("submitEvidenceBtn");
+      evidenceBtn.style.display = allStepsComplete && !isPassed ? "inline-block" : "none";
+      const needsMoreWork = selected.progressStatus === "needs_more_work";
+      evidenceBtn.disabled = evidenceDone && !needsMoreWork;
+      evidenceBtn.textContent = "Book In For Skill Assessment";
+      const badgeBox = document.getElementById("skillBadgeBox");
+      if (selected.progressStatus === "passed") {
+        badgeBox.classList.add("earned");
+        badgeBox.innerHTML = `
+          <div class="badge-award">
+            <div class="badge-mark">★</div>
+            <div>
+              <p class="badge-title">${selected.name} Mastery Badge</p>
+              <p class="badge-sub">Trail Certified Achievement Unlocked</p>
+            </div>
+          </div>
+        `;
+      } else {
+        badgeBox.classList.remove("earned");
+        badgeBox.innerHTML = "Badge Icon Placeholder";
+      }
+
+      const panel = document.getElementById("practiceLogPanel");
+      panel.style.display = state.practicePanelOpen ? "block" : "none";
+      const logs = state.practiceLogs[selected.id] || [];
+      document.getElementById("practiceLogCount").textContent = logs.length;
+      document.getElementById("practiceLogList").innerHTML = logs.length
+        ? logs.map(log => `
+          <div class="log-item">
+            <strong>${log.date}</strong> - ${log.duration} min - ${log.focus}
+            <div class="muted">${log.notes || "No notes added."}</div>
+            <div class="btn-row" style="margin-top: 6px;">
+              <button class="btn-mini" data-action="edit-log" data-skill-id="${selected.id}" data-log-id="${log.id}">Edit</button>
+              <button class="btn-mini" data-action="delete-log" data-skill-id="${selected.id}" data-log-id="${log.id}">Delete</button>
+            </div>
+          </div>
+        `).join("")
+        : `<div class="log-item">No logs yet for this skill.</div>`;
+
+      const dateInput = document.getElementById("practiceDate");
+      if (dateInput && !dateInput.value) {
+        const today = new Date();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        dateInput.value = `${today.getFullYear()}-${m}-${d}`;
+      }
+      updateStickyCta();
+    }
+
+    function updateStickyCta() {
+      const wrap = document.getElementById("mobileStickyCta");
+      const detailActive = document.getElementById("skill-detail").classList.contains("active");
+      const evidenceBtn = document.getElementById("submitEvidenceBtn");
+      const canShow = detailActive && evidenceBtn && evidenceBtn.style.display !== "none" && !evidenceBtn.disabled;
+      wrap.style.display = canShow ? "block" : "none";
+    }
+
+    function renderRewards() {
+      updatePoints(0);
+      document.getElementById("rewardPoints").textContent = state.points;
+      const rewardMilestones = [
+        { threshold: 100, label: "Trail Dog Rookie" },
+        { threshold: 250, label: "Trail Dog Explorer" },
+        { threshold: 500, label: "Trail Dog Advanced" },
+        { threshold: 600, label: "Trail Dog Pathfinder" },
+        { threshold: 900, label: "Trail Dog Expert" },
+        { threshold: 1300, label: "Trail Dog Master" }
+      ];
+      const prev = rewardMilestones.filter(r => state.points >= r.threshold).pop() || { threshold: 0, label: "Start" };
+      const next = rewardMilestones.find(r => state.points < r.threshold);
+      const bandSize = (next ? next.threshold : prev.threshold) - prev.threshold || 1;
+      const inBand = state.points - prev.threshold;
+      const rewardPct = next ? Math.max(0, Math.min(100, (inBand / bandSize) * 100)) : 100;
+      document.getElementById("rewardJourneyProgress").style.width = `${rewardPct}%`;
+      document.getElementById("rewardJourneyPct").textContent = `${Math.round(rewardPct)}%`;
+      document.getElementById("rewardJourneyLabel").textContent = next
+        ? `${state.points} / ${next.threshold} pts`
+        : "All major rewards unlocked";
+      document.getElementById("nextRewardText").textContent = next
+        ? `${Math.max(0, next.threshold - state.points)} pts to reach ${next.label}`
+        : "You unlocked every reward tier. Keep climbing.";
+      if (!next && !hasMasterRequirements()) {
+        const skillsNeeded = Math.max(0, 14 - unlockedSkills().length);
+        const walksNeeded = Math.max(0, 5 - walksAttendedCount());
+        document.getElementById("nextRewardText").textContent = `Master requires ${skillsNeeded} more skills and ${walksNeeded} more walks`;
+      }
+
+      const formatRules = (title, rules) => {
+        const items = rules.map(rule => `${rule.label}: +${rule.points}`).join("<br>");
+        return `<strong>${title}</strong><br>${items}`;
+      };
+      document.getElementById("pointsRuleSummary").innerHTML = [
+        formatRules("CORE PROGRESSION", POINT_RULES.core),
+        formatRules("ENGAGEMENT", POINT_RULES.engagement),
+        formatRules("GROWTH & COMMUNITY", POINT_RULES.growth),
+        formatRules("BONUS / SEASONAL", POINT_RULES.bonus),
+        `<strong>Not Rewarded:</strong> Unlimited evidence, daily logging, chat comments, passive activity`
+      ].join("<br><br>");
+
+      document.querySelectorAll("#rewardsLadder .step").forEach(step => {
+        const kind = step.getAttribute("data-kind");
+        const threshold = Number(step.getAttribute("data-threshold"));
+        const walkGoal = Number(step.getAttribute("data-walks"));
+        const isMasterStep = threshold === 1300;
+        const reached = kind === "all-skills-pass"
+          ? Object.keys(state.skillAssessmentsPassed).length >= 14
+          : kind === "walks-attended"
+            ? walksAttendedCount() >= walkGoal
+          : (isMasterStep ? (state.points >= threshold && hasMasterRequirements()) : state.points >= threshold);
+        step.classList.toggle("reached", reached);
+      });
+
+      const history = document.getElementById("pointsHistoryList");
+      if (!state.pointsHistory.length) {
+        history.innerHTML = `<div class="log-item">No point events yet.</div>`;
+      } else {
+        history.innerHTML = state.pointsHistory.slice(0, 12).map(item => `
+          <div class="log-item">
+            <strong>+${item.points} pts</strong> - ${item.label}
+            <div class="muted">${item.when}</div>
+          </div>
+        `).join("");
+      }
+    }
+
+    function renderBooking() {
+      const typeFilter = document.getElementById("bookingTypeFilter");
+      const statusFilter = document.getElementById("bookingStatusFilter");
+      if (typeFilter) typeFilter.value = state.bookingFilters.type;
+      if (statusFilter) statusFilter.value = state.bookingFilters.status;
+
+      const parseDateTime = (dateISO, time12h) => {
+        const [time, meridiem] = time12h.split(" ");
+        let [hour, minute] = time.split(":").map(Number);
+        if (meridiem === "PM" && hour !== 12) hour += 12;
+        if (meridiem === "AM" && hour === 12) hour = 0;
+        const dt = new Date(`${dateISO}T00:00:00`);
+        dt.setHours(hour, minute, 0, 0);
+        return dt.getTime();
+      };
+
+      const events = [
+        ...state.slots.map(slot => ({ ...slot, eventType: "assessment" })),
+        ...state.monthlyWalks.map(walk => ({ ...walk, eventType: "hillwalk" }))
+      ]
+        .filter(event => state.bookingFilters.type === "all" || event.eventType === state.bookingFilters.type)
+        .filter(event => state.bookingFilters.status === "all" || event.status === state.bookingFilters.status)
+        .sort((a, b) => parseDateTime(a.dateISO, a.time) - parseDateTime(b.dateISO, b.time));
+
+      const wrap = document.getElementById("bookingEvents");
+      if (!events.length) {
+        wrap.innerHTML = `<div class="card"><p class="muted">No events match the selected filters.</p></div>`;
+        return;
+      }
+      const now = Date.now();
+      const toStatusText = (status) => (
+        status === "pending" ? "Not Yet"
+          : status === "booked" ? "Booked"
+          : status === "waitlisted" ? "Waitlisted"
+          : "Passed"
+      );
+
+      const renderEventCard = (event) => {
+        const primaryAction = event.status === "pending"
+          ? `<button class="btn-primary" data-action="${event.eventType === "assessment" ? "book-slot" : "book-walk"}" data-id="${event.id}">${event.eventType === "assessment" ? "Book" : "Book Walk"}</button>`
+          : event.status === "booked" && event.eventType === "hillwalk"
+            ? `<button class="btn-secondary" data-action="attend-walk" data-id="${event.id}">Attend Walk</button>`
+            : "";
+        const secondaryAction = event.status === "booked"
+          ? `<button class="btn-secondary" data-action="cancel-booking" data-id="${event.id}" data-kind="${event.eventType}">Cancel</button>`
+          : event.status === "waitlisted"
+            ? `<button class="btn-secondary" data-action="leave-waitlist" data-id="${event.id}" data-kind="${event.eventType}">Leave Waitlist</button>`
+            : "";
+
+        return `
+          <div class="slot">
+            <div>
+              <strong>${event.day} - ${event.time}</strong>
+              <small>
+                ${event.eventType === "assessment" ? "Assessment Day" : event.month}
+                | ${event.location}
+                ${event.eventType === "hillwalk" ? ` | Skill Focus: ${event.skill}` : ""}
+                | Spots ${event.bookedCount}/${event.capacity}
+                ${event.waitlistCount ? ` | Waitlist ${event.waitlistCount}` : ""}
+              </small>
+            </div>
+            <div class="btn-row" style="margin:0;">
+              ${primaryAction}
+              ${secondaryAction}
+              <span class="status-pill ${event.status}">${toStatusText(event.status)}</span>
+            </div>
+          </div>
+        `;
+      };
+
+      const renderSection = (title, sectionEvents, emptyText, reverseChronological = false) => {
+        if (!sectionEvents.length) {
+          return `
+            <div class="card">
+              <h3>${title}</h3>
+              <p class="muted">${emptyText}</p>
+            </div>
+          `;
+        }
+
+        const ordered = [...sectionEvents].sort((a, b) => {
+          const diff = parseDateTime(a.dateISO, a.time) - parseDateTime(b.dateISO, b.time);
+          return reverseChronological ? -diff : diff;
+        });
+
+        let sectionHtml = `<div class="card"><h3>${title}</h3>`;
+        let activeMonth = "";
+        ordered.forEach((event) => {
+          const monthKey = new Date(`${event.dateISO}T00:00:00`).toLocaleDateString(undefined, {
+            month: "long",
+            year: "numeric"
+          });
+          if (monthKey !== activeMonth) {
+            activeMonth = monthKey;
+            sectionHtml += `<p class="month-header">${monthKey}</p>`;
+          }
+          sectionHtml += renderEventCard(event);
+        });
+        sectionHtml += `</div>`;
+        return sectionHtml;
+      };
+
+      const yourBookings = events.filter((event) => {
+        const eventTime = parseDateTime(event.dateISO, event.time);
+        return (event.status === "booked" || event.status === "waitlisted") && eventTime >= now;
+      });
+      const availableToBook = events.filter((event) => {
+        const eventTime = parseDateTime(event.dateISO, event.time);
+        return event.status === "pending" && eventTime >= now;
+      });
+      const pastAndCompleted = events.filter((event) => {
+        const eventTime = parseDateTime(event.dateISO, event.time);
+        return event.status === "passed" || eventTime < now;
+      });
+
+      const html = [
+        renderSection("Your Upcoming Bookings", yourBookings, "You are not booked into any upcoming events yet."),
+        renderSection("Available to Book", availableToBook, "No upcoming events available for booking with the current filters."),
+        renderSection("Past & Completed", pastAndCompleted, "No past bookings yet.", true)
+      ].join("");
+
+      wrap.innerHTML = html;
+    }
+
+    function renderLoggedSkills() {
+      const getLogTime = (log) => {
+        if (log.loggedAt) return new Date(log.loggedAt).getTime();
+        if (log.date) return new Date(`${log.date}T00:00:00`).getTime();
+        return 0;
+      };
+      const allLoggedSkills = state.skills
+        .map(skill => ({
+          skill,
+          logs: [...(state.practiceLogs[skill.id] || [])].sort((a, b) => getLogTime(b) - getLogTime(a))
+        }))
+        .filter(row => row.logs.length > 0)
+        .sort((a, b) => getLogTime(b.logs[0]) - getLogTime(a.logs[0]));
+
+      const total = allLoggedSkills.reduce((sum, row) => sum + row.logs.length, 0);
+      document.getElementById("totalLoggedSessions").textContent = total;
+      const viewSelect = document.getElementById("loggedViewModeSelect");
+      if (viewSelect) viewSelect.value = state.loggedViewMode;
+      const selectedCount = Object.keys(state.selectedLogIds).length;
+      const selectedText = document.getElementById("selectedLogsCountText");
+      if (selectedText) {
+        selectedText.textContent = `${selectedCount} selected`;
+        selectedText.style.display = state.logSelectionMode ? "inline" : "none";
+      }
+      const modeBtn = document.getElementById("toggleLogSelectModeBtn");
+      if (modeBtn) modeBtn.textContent = state.logSelectionMode ? "Cancel Selection" : "Select Multiple";
+      const deleteBtn = document.getElementById("deleteSelectedLogsBtn");
+      if (deleteBtn) deleteBtn.style.display = selectedCount > 0 ? "inline-block" : "none";
+
+      const container = document.getElementById("loggedSkillsList");
+      if (!allLoggedSkills.length) {
+        container.innerHTML = `<div class="card"><p class="muted">No skills logged yet. Open a skill and save a practice log.</p></div>`;
+        return;
+      }
+
+      const renderLogItem = (skillId, log, options = {}) => `
+        <div class="log-item">
+          ${state.logSelectionMode ? `
+            <label class="log-select-row">
+              <input type="checkbox" data-action="toggle-log-select" data-log-id="${log.id}" ${state.selectedLogIds[log.id] ? "checked" : ""}>
+              Select this log
+            </label>
+          ` : ""}
+          ${options.skillName ? `<div class="muted">Skill: ${options.skillName}</div>` : ""}
+          <strong>${log.date}</strong> - ${log.duration} min - ${log.focus}
+          <div class="muted">${log.notes || "No notes added."}</div>
+          <div class="btn-row" style="margin-top: 6px;">
+            <button class="btn-mini" data-action="edit-log" data-skill-id="${skillId}" data-log-id="${log.id}">Edit</button>
+            <button class="btn-mini" data-action="delete-log" data-skill-id="${skillId}" data-log-id="${log.id}">Delete</button>
+          </div>
+        </div>
+      `;
+
+      if (state.loggedViewMode === "date") {
+        const flat = allLoggedSkills
+          .flatMap(({ skill, logs }) => logs.map(log => ({ skill, log })))
+          .sort((a, b) => getLogTime(b.log) - getLogTime(a.log));
+        const visible = flat.slice(0, state.loggedDateLimit || 30);
+        let html = `<div class="card"><div class="log-list">`;
+        let activeMonth = "";
+        visible.forEach(({ skill, log }) => {
+          const monthKey = new Date(`${log.date}T00:00:00`).toLocaleDateString(undefined, {
+            month: "long",
+            year: "numeric"
+          });
+          if (monthKey !== activeMonth) {
+            activeMonth = monthKey;
+            html += `<p class="month-header">${activeMonth}</p>`;
+          }
+          html += renderLogItem(skill.id, log, { skillName: skill.name });
+        });
+        html += `</div>`;
+        if (flat.length > (state.loggedDateLimit || 30)) {
+          html += `<div class="btn-row"><button class="btn-secondary" data-action="show-more-logs-date">Show 30 More</button></div>`;
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+        return;
+      }
+
+      container.innerHTML = allLoggedSkills.map(({ skill, logs }) => `
+        <div class="card">
+          <details class="collapse-card" ${allLoggedSkills.length <= 2 ? "open" : ""}>
+            <summary>${skill.name} (${logs.length} log${logs.length === 1 ? "" : "s"})</summary>
+            <div class="log-list">
+              ${logs.slice(0, (state.loggedSkillLimits[skill.id] || 20)).map(log => renderLogItem(skill.id, log)).join("")}
+            </div>
+            ${logs.length > (state.loggedSkillLimits[skill.id] || 20)
+              ? `<div class="btn-row"><button class="btn-secondary" data-action="show-more-logs" data-id="${skill.id}">Show 20 More</button></div>`
+              : ""}
+          </details>
+        </div>
+      `).join("");
+    }
+
+    function openLogEditModal(skillId, logId) {
+      const logs = state.practiceLogs[skillId] || [];
+      const log = logs.find((l) => l.id === logId);
+      if (!log) return false;
+
+      const skillSelect = document.getElementById("logEditSkill");
+      skillSelect.innerHTML = state.skills
+        .filter((s) => s.unlocked)
+        .map((s) => `<option value="${s.id}">${s.name}</option>`)
+        .join("");
+      skillSelect.value = String(skillId);
+      document.getElementById("logEditDate").value = log.date || "";
+      document.getElementById("logEditStep").value = log.focus || "Step 1 Criteria";
+      document.getElementById("logEditDuration").value = String(log.duration || 20);
+      document.getElementById("logEditComment").value = log.notes || "";
+      state.logEditContext = { skillId, logId };
+      document.getElementById("logEditModalBackdrop").style.display = "flex";
+      return true;
+    }
+
+    function closeLogEditModal() {
+      state.logEditContext = null;
+      document.getElementById("logEditModalBackdrop").style.display = "none";
+    }
+
+    function editPracticeLog(skillId, logId) {
+      if (state.logSelectionMode) {
+        showToast("Exit selection mode to edit logs.", "warn");
+        return;
+      }
+      openLogEditModal(skillId, logId);
+    }
+
+    function deletePracticeLog(skillId, logId) {
+      if (state.logSelectionMode) {
+        showToast("Use Delete Selected while in selection mode.", "warn");
+        return;
+      }
+      const logs = state.practiceLogs[skillId] || [];
+      const idx = logs.findIndex((l) => l.id === logId);
+      if (idx < 0) return;
+      const ok = window.confirm("Delete this practice log?");
+      if (!ok) return;
+      const removedPoints = removePracticeLogPointsIfEligible(logs[idx]);
+      logs.splice(idx, 1);
+      showToast(removedPoints > 0 ? `Practice log deleted. -${removedPoints} pts removed.` : "Practice log deleted.");
+      renderAll();
+    }
+
+    function renderAll() {
+      updatePoints(0);
+      renderDashboard();
+      renderGlanceChips();
+      renderSkills();
+      renderSkillDetail();
+      renderRewards();
+      renderBooking();
+      renderLoggedSkills();
+      updateStickyCta();
+      persistState();
+    }
+
+    document.addEventListener("click", (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const getEventByKind = (kind, eventId) => (
+        kind === "assessment"
+          ? state.slots.find(s => s.id === eventId)
+          : state.monthlyWalks.find(w => w.id === eventId)
+      );
+
+      if (target.matches(".tab-btn")) {
+        showScreen(target.dataset.screen);
+      }
+
+      const action = target.dataset.action;
+      const id = Number(target.dataset.id);
+      const kind = target.dataset.kind;
+      if (action === "unlock-skill") unlockSkill(id);
+      if (action === "view-skill") {
+        state.selectedSkillId = id;
+        renderSkillDetail();
+        showScreen("skill-detail");
+      }
+      if (action === "show-more-logs") {
+        const current = state.loggedSkillLimits[id] || 20;
+        state.loggedSkillLimits[id] = current + 20;
+        renderLoggedSkills();
+        persistState();
+      }
+      if (action === "show-more-logs-date") {
+        state.loggedDateLimit = (state.loggedDateLimit || 30) + 30;
+        renderLoggedSkills();
+        persistState();
+      }
+      if (action === "toggle-log-select") {
+        const logId = target.dataset.logId;
+        if (!logId) return;
+        if (target instanceof HTMLInputElement && target.checked) state.selectedLogIds[logId] = true;
+        else delete state.selectedLogIds[logId];
+        renderLoggedSkills();
+        persistState();
+      }
+      if (action === "edit-log") {
+        const skillId = Number(target.dataset.skillId);
+        const logId = target.dataset.logId;
+        if (skillId && logId) editPracticeLog(skillId, logId);
+      }
+      if (action === "delete-log") {
+        const skillId = Number(target.dataset.skillId);
+        const logId = target.dataset.logId;
+        if (skillId && logId) deletePracticeLog(skillId, logId);
+      }
+      if (action === "book-slot") {
+        const slot = state.slots.find(s => s.id === id);
+        if (slot && slot.status === "pending") {
+          if (slot.bookedCount < slot.capacity) {
+            slot.bookedCount += 1;
+            slot.status = "booked";
+            slot.bookingPointHistoryIds = slot.bookingPointHistoryIds || [];
+            const bookAwardId = awardEvent("book_walk_early", { sourceKey: `booking:assessment:${slot.id}` });
+            if (bookAwardId) slot.bookingPointHistoryIds.push(bookAwardId);
+            showToast("Assessment booked.");
+            renderAll();
+          } else {
+            slot.waitlistCount += 1;
+            slot.status = "waitlisted";
+            showToast("Added to assessment waitlist.", "warn");
+            renderAll();
+          }
+        }
+      }
+      if (action === "book-walk") {
+        const walk = state.monthlyWalks.find(w => w.id === id);
+        if (walk && walk.status === "pending") {
+          if (walk.bookedCount < walk.capacity) {
+            walk.bookedCount += 1;
+            walk.status = "booked";
+            walk.bookingPointHistoryIds = walk.bookingPointHistoryIds || [];
+            const earlyAwardId = awardEvent("book_walk_early", { sourceKey: `booking:hillwalk:${walk.id}` });
+            if (earlyAwardId) walk.bookingPointHistoryIds.push(earlyAwardId);
+            const attendanceAwardId = awardEvent("walk_attendance", { sourceKey: `booking:hillwalk:${walk.id}` });
+            if (attendanceAwardId) walk.bookingPointHistoryIds.push(attendanceAwardId);
+            showToast("Hill walk booked. Attendance logged.");
+            renderAll();
+          } else {
+            walk.waitlistCount += 1;
+            walk.status = "waitlisted";
+            showToast("Added to hill walk waitlist.", "warn");
+            renderAll();
+          }
+        }
+      }
+      if (action === "attend-walk") {
+        const walk = state.monthlyWalks.find(w => w.id === id);
+        if (walk && walk.status === "booked") {
+          walk.status = "passed";
+          const relatedSkill = findSkillByName(walk.skill);
+          if (relatedSkill && !relatedSkill.unlocked) {
+            unlockSkill(relatedSkill.id, "walk");
+          }
+          showToast("Walk marked as attended.");
+          renderAll();
+        }
+      }
+      if (action === "leave-waitlist" && kind) {
+        const event = getEventByKind(kind, id);
+        if (event && event.status === "waitlisted") {
+          event.status = "pending";
+          if (event.waitlistCount > 0) event.waitlistCount -= 1;
+          showToast("Removed from waitlist.");
+          renderAll();
+        }
+      }
+      if (action === "cancel-booking" && kind) {
+        const event = getEventByKind(kind, id);
+        if (event && event.status === "booked") {
+          event.status = "pending";
+          const removedPoints = removePointsHistoryByIds(event.bookingPointHistoryIds || []);
+          event.bookingPointHistoryIds = [];
+          if (event.bookedCount > 0) event.bookedCount -= 1;
+          if (event.waitlistCount > 0) {
+            event.waitlistCount -= 1;
+            event.bookedCount += 1;
+            showToast(removedPoints > 0
+              ? `Booking canceled. -${removedPoints} pts removed. One waitlisted participant was auto-promoted.`
+              : "Booking canceled. One waitlisted participant was auto-promoted.");
+          } else {
+            showToast(removedPoints > 0 ? `Booking canceled. -${removedPoints} pts removed.` : "Booking canceled.");
+          }
+          renderAll();
+        }
+      }
+    });
+
+    document.getElementById("practiceGainBtn").addEventListener("click", () => {
+      const skill = state.skills.find(s => s.id === state.selectedSkillId);
+      if (!skill || !skill.unlocked) return;
+      state.practicePanelOpen = !state.practicePanelOpen;
+      renderSkillDetail();
+      persistState();
+    });
+    document.getElementById("closePracticePanelBtn").addEventListener("click", () => {
+      state.practicePanelOpen = false;
+      renderSkillDetail();
+      persistState();
+    });
+    document.getElementById("practiceForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const skill = state.skills.find(s => s.id === state.selectedSkillId);
+      if (!skill || !skill.unlocked) return;
+
+      const date = document.getElementById("practiceDate").value;
+      const duration = Number(document.getElementById("practiceDuration").value);
+      const focus = document.getElementById("practiceFocus").value;
+      const notes = document.getElementById("practiceNotes").value.trim();
+      if (!date || !duration) return;
+
+      if (!state.practiceLogs[skill.id]) state.practiceLogs[skill.id] = [];
+      const loggedAt = new Date().toISOString();
+      state.practiceLogs[skill.id].unshift({
+        id: `${skill.id}-${loggedAt}-${Math.random().toString(16).slice(2, 8)}`,
+        date,
+        duration,
+        focus,
+        notes,
+        loggedAt
+      });
+      state.practicePanelOpen = false;
+      document.getElementById("practiceNotes").value = "";
+      showToast("Practice log saved.");
+      renderAll();
+    });
+    document.getElementById("toggleLogSelectModeBtn").addEventListener("click", () => {
+      state.logSelectionMode = !state.logSelectionMode;
+      if (!state.logSelectionMode) state.selectedLogIds = {};
+      renderLoggedSkills();
+      persistState();
+    });
+    document.getElementById("loggedViewModeSelect").addEventListener("change", (e) => {
+      state.loggedViewMode = e.target.value === "date" ? "date" : "skill";
+      state.selectedLogIds = {};
+      renderLoggedSkills();
+      persistState();
+    });
+    document.getElementById("cancelLogEditBtn").addEventListener("click", () => {
+      closeLogEditModal();
+    });
+    document.getElementById("logEditForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const ctx = state.logEditContext;
+      if (!ctx) return;
+
+      const originSkillId = ctx.skillId;
+      const logId = ctx.logId;
+      const originLogs = state.practiceLogs[originSkillId] || [];
+      const idx = originLogs.findIndex((l) => l.id === logId);
+      if (idx < 0) {
+        closeLogEditModal();
+        return;
+      }
+      const current = originLogs[idx];
+      const targetSkillId = Number(document.getElementById("logEditSkill").value);
+      const date = document.getElementById("logEditDate").value.trim();
+      const focus = document.getElementById("logEditStep").value.trim();
+      const duration = Number(document.getElementById("logEditDuration").value);
+      const notes = document.getElementById("logEditComment").value.trim();
+      if (!targetSkillId || !date || !focus || Number.isNaN(duration) || duration <= 0) {
+        showToast("Please complete all required fields.", "warn");
+        return;
+      }
+
+      const updated = {
+        ...current,
+        date,
+        focus,
+        duration,
+        notes
+      };
+      originLogs.splice(idx, 1);
+      if (!state.practiceLogs[targetSkillId]) state.practiceLogs[targetSkillId] = [];
+      state.practiceLogs[targetSkillId].unshift(updated);
+      if (state.selectedSkillId === originSkillId && originSkillId !== targetSkillId) {
+        state.selectedSkillId = targetSkillId;
+      }
+      closeLogEditModal();
+      showToast("Practice log updated.");
+      renderAll();
+    });
+    document.getElementById("deleteSelectedLogsBtn").addEventListener("click", () => {
+      const selected = Object.keys(state.selectedLogIds);
+      if (!selected.length) {
+        showToast("No logs selected.", "warn");
+        return;
+      }
+      const ok = window.confirm(`Delete ${selected.length} selected log${selected.length === 1 ? "" : "s"}?`);
+      if (!ok) return;
+      let removedPointsTotal = 0;
+      Object.keys(state.practiceLogs).forEach((skillId) => {
+        state.practiceLogs[skillId] = (state.practiceLogs[skillId] || []).filter((log) => {
+          if (!state.selectedLogIds[log.id]) return true;
+          removedPointsTotal += removePracticeLogPointsIfEligible(log);
+          return false;
+        });
+      });
+      state.selectedLogIds = {};
+      state.logSelectionMode = false;
+      showToast(
+        removedPointsTotal > 0
+          ? `${selected.length} logs deleted. -${removedPointsTotal} pts removed.`
+          : `${selected.length} logs deleted.`
+      );
+      renderAll();
+    });
+    document.getElementById("stepsContainer").addEventListener("change", (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.type !== "checkbox") return;
+
+      const step = Number(target.dataset.step);
+      const item = Number(target.dataset.item);
+      const skillId = state.selectedSkillId;
+      if (!skillId || !step || Number.isNaN(item)) return;
+      if (!isStepUnlocked(skillId, step)) return;
+
+      const checks = getSkillStepChecks(skillId);
+      checks[step][item] = target.checked;
+      renderSkillDetail();
+      persistState();
+    });
+    document.getElementById("submitEvidenceBtn").addEventListener("click", () => {
+      const skill = state.skills.find(s => s.id === state.selectedSkillId);
+      if (!skill || !skill.unlocked) return;
+      state.bookingFilters.type = "assessment";
+      state.bookingFilters.status = "all";
+      showScreen("booking");
+      renderBooking();
+      persistState();
+      showToast("Choose an assessment slot to book in.");
+    });
+    document.getElementById("dashboardEditUserBtn").addEventListener("click", () => {
+      const nextName = window.prompt("Update username", state.user || "");
+      if (nextName === null) return;
+      const cleanName = nextName.trim();
+      if (!cleanName) return;
+      state.user = cleanName;
+      try {
+        localStorage.setItem(SAVED_USERNAME_KEY, cleanName);
+      } catch (e) {
+        // Ignore storage access issues in preview environments.
+      }
+      showToast("Username updated.");
+      renderAll();
+    });
+    document.getElementById("copyReferralBtn").addEventListener("click", async () => {
+      const link = getReferralLink();
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(link);
+          showToast("Referral link copied.");
+        } else {
+          showToast("Copy not available on this browser.", "warn");
+        }
+      } catch (e) {
+        showToast("Could not copy link. You can copy it manually.", "warn");
+      }
+    });
+    document.getElementById("jumpToBookingBtn").addEventListener("click", () => {
+      showScreen("booking");
+      showToast("Find your next event and keep climbing.");
+    });
+    document.getElementById("mobileStickyCtaBtn").addEventListener("click", () => {
+      document.getElementById("submitEvidenceBtn").click();
+    });
+    document.getElementById("backToSkillsBtn").addEventListener("click", () => {
+      showScreen("skills");
+    });
+    document.getElementById("bookingTypeFilter").addEventListener("change", (e) => {
+      state.bookingFilters.type = e.target.value;
+      renderBooking();
+      persistState();
+    });
+    document.getElementById("bookingStatusFilter").addEventListener("change", (e) => {
+      state.bookingFilters.status = e.target.value;
+      renderBooking();
+      persistState();
+    });
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+    });
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+    });
+    document.getElementById("installAppBtn").addEventListener("click", async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      try {
+        await deferredInstallPrompt.userChoice;
+      } catch (e) {
+        // Ignore prompt errors in preview environments.
+      }
+      deferredInstallPrompt = null;
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
