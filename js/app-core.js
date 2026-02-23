@@ -19,6 +19,7 @@
       logSelectionMode: false,
       selectedLogIds: {},
       logEditContext: null,
+      bookingOverrides: {},
       referrals: [],
       pointsHistory: [],
       toasts: [],
@@ -115,7 +116,7 @@
             "user", "points", "selectedSkillId", "practicePanelOpen", "bookingFilters",
             "rankBonusesAwarded", "completionMilestonesAwarded", "awardedEvents",
             "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
-            "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "slots", "monthlyWalks", "referrals",
+            "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "referrals", "bookingOverrides",
             "loggedSkillLimits", "loggedDateLimit", "loggedViewMode"
           ];
           keys.forEach((key) => {
@@ -134,6 +135,29 @@
 
     function persistState() {
       try {
+        const nextBookingOverrides = {};
+        (state.slots || []).forEach((slot) => {
+          const key = `assessment:${slot.id}`;
+          const payload = {};
+          if (slot.status) payload.status = slot.status;
+          if (slot.paymentStatus) payload.paymentStatus = slot.paymentStatus;
+          if (Array.isArray(slot.bookingPointHistoryIds) && slot.bookingPointHistoryIds.length) {
+            payload.bookingPointHistoryIds = slot.bookingPointHistoryIds;
+          }
+          if (Object.keys(payload).length) nextBookingOverrides[key] = payload;
+        });
+        (state.monthlyWalks || []).forEach((walk) => {
+          const key = `hillwalk:${walk.id}`;
+          const payload = {};
+          if (walk.status) payload.status = walk.status;
+          if (walk.paymentStatus) payload.paymentStatus = walk.paymentStatus;
+          if (Array.isArray(walk.bookingPointHistoryIds) && walk.bookingPointHistoryIds.length) {
+            payload.bookingPointHistoryIds = walk.bookingPointHistoryIds;
+          }
+          if (Object.keys(payload).length) nextBookingOverrides[key] = payload;
+        });
+        state.bookingOverrides = nextBookingOverrides;
+
         const snapshot = {
           user: state.user,
           points: state.points,
@@ -149,6 +173,7 @@
           level5ReachedBySkill: state.level5ReachedBySkill,
           stage5StretchDoneBySkill: state.stage5StretchDoneBySkill,
           skillStepChecks: state.skillStepChecks,
+          bookingOverrides: state.bookingOverrides,
           referrals: state.referrals,
           pointsHistory: state.pointsHistory,
           bookedSlotIds: state.bookedSlotIds,
@@ -157,9 +182,7 @@
           loggedSkillLimits: state.loggedSkillLimits,
           loggedDateLimit: state.loggedDateLimit,
           loggedViewMode: state.loggedViewMode,
-          skills: state.skills,
-          slots: state.slots,
-          monthlyWalks: state.monthlyWalks
+          skills: state.skills
         };
         localStorage.setItem(SAVED_APP_STATE_KEY, JSON.stringify(snapshot));
       } catch (e) {
@@ -265,6 +288,80 @@
       });
     }
 
+    function applyAssessmentResetIfNeeded(payload) {
+      const resetToken = String(payload.updatedAt || "reset-v1");
+      let resetAlreadyApplied = false;
+      try {
+        resetAlreadyApplied = localStorage.getItem(REMOTE_ASSESSMENT_RESET_APPLIED_KEY) === resetToken;
+      } catch (error) {
+        resetAlreadyApplied = false;
+      }
+
+      if (payload.clearAssessmentBookings === true && !resetAlreadyApplied) {
+        state.slots = (state.slots || []).map((slot) => {
+          const reset = { ...slot, status: "pending" };
+          delete reset.paymentStatus;
+          reset.bookingPointHistoryIds = [];
+          return reset;
+        });
+        Object.keys(state.bookingOverrides || {}).forEach((key) => {
+          if (key.startsWith("assessment:")) delete state.bookingOverrides[key];
+        });
+        try {
+          localStorage.setItem(REMOTE_ASSESSMENT_RESET_APPLIED_KEY, resetToken);
+        } catch (error) {
+          // Ignore storage failures.
+        }
+      }
+    }
+
+    function applyBookingOverridesToEvents() {
+      const overrides = state.bookingOverrides && typeof state.bookingOverrides === "object"
+        ? state.bookingOverrides
+        : {};
+      state.slots = (state.slots || []).map((slot) => {
+        const key = `assessment:${slot.id}`;
+        const override = overrides[key];
+        if (!override) return slot;
+        return {
+          ...slot,
+          status: override.status || slot.status,
+          paymentStatus: override.paymentStatus || slot.paymentStatus,
+          bookingPointHistoryIds: Array.isArray(override.bookingPointHistoryIds)
+            ? override.bookingPointHistoryIds
+            : slot.bookingPointHistoryIds
+        };
+      });
+      state.monthlyWalks = (state.monthlyWalks || []).map((walk) => {
+        const key = `hillwalk:${walk.id}`;
+        const override = overrides[key];
+        if (!override) return walk;
+        return {
+          ...walk,
+          status: override.status || walk.status,
+          paymentStatus: override.paymentStatus || walk.paymentStatus,
+          bookingPointHistoryIds: Array.isArray(override.bookingPointHistoryIds)
+            ? override.bookingPointHistoryIds
+            : walk.bookingPointHistoryIds
+        };
+      });
+    }
+
+    function applyLocalEventsData() {
+      const payload = (typeof window !== "undefined" && window.WH_EVENTS_DATA && typeof window.WH_EVENTS_DATA === "object")
+        ? window.WH_EVENTS_DATA
+        : null;
+      if (!payload) return false;
+
+      const nextSlots = Array.isArray(payload.slots) ? payload.slots : [];
+      const nextWalks = Array.isArray(payload.monthlyWalks) ? payload.monthlyWalks : [];
+      state.slots = mergeRemoteEvents(state.slots, nextSlots);
+      state.monthlyWalks = mergeRemoteEvents(state.monthlyWalks, nextWalks);
+      applyBookingOverridesToEvents();
+      applyAssessmentResetIfNeeded(payload);
+      return true;
+    }
+
     async function hydrateRemoteEvents(options = {}) {
       if (typeof fetch !== "function") return false;
       const silent = Boolean(options.silent);
@@ -282,28 +379,8 @@
 
         state.slots = mergeRemoteEvents(state.slots, nextSlots);
         state.monthlyWalks = mergeRemoteEvents(state.monthlyWalks, nextWalks);
-
-        const resetToken = String(payload.updatedAt || "reset-v1");
-        let resetAlreadyApplied = false;
-        try {
-          resetAlreadyApplied = localStorage.getItem(REMOTE_ASSESSMENT_RESET_APPLIED_KEY) === resetToken;
-        } catch (error) {
-          resetAlreadyApplied = false;
-        }
-
-        if (payload.clearAssessmentBookings === true && !resetAlreadyApplied) {
-          state.slots = (state.slots || []).map((slot) => {
-            const reset = { ...slot, status: "pending" };
-            delete reset.paymentStatus;
-            reset.bookingPointHistoryIds = [];
-            return reset;
-          });
-          try {
-            localStorage.setItem(REMOTE_ASSESSMENT_RESET_APPLIED_KEY, resetToken);
-          } catch (error) {
-            // Ignore storage failures.
-          }
-        }
+        applyBookingOverridesToEvents();
+        applyAssessmentResetIfNeeded(payload);
 
         normalizeBookingData();
         normalizeSkillCatalog();
@@ -378,10 +455,11 @@
     }
 
     loadPersistedState();
-    normalizeSkillCatalog();
     ensurePracticeLogIds();
     normalizeBookingFilters();
+    applyLocalEventsData();
     normalizeBookingData();
+    normalizeSkillCatalog();
     recalculatePointsFromHistory();
 
     const SKILL_STAGE_CONTENT = {

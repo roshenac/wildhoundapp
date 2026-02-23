@@ -1,4 +1,4 @@
-{
+window.WH_EVENTS_DATA = {
   "updatedAt": "2026-02-23T12:00:00Z",
   "clearAssessmentBookings": true,
   "slots": [],
@@ -108,4 +108,4 @@
       "waitlistCount": 0
     }
   ]
-}
+};
