@@ -140,9 +140,12 @@
     const paymentType = (params.get("type") || "skill").toLowerCase();
     const skill = params.get("skill") || "Selected Skill";
     const skillId = params.get("skillId") || "";
+    const bookedMonth = params.get("month") || "";
     const returnToRaw = params.get("returnTo") || "";
     const isTestMode = params.get("test") === "1";
-    document.getElementById("skillLine").textContent = `Unlocking: ${skill}`;
+    document.getElementById("skillLine").textContent = paymentType === "walk" && bookedMonth
+      ? `Booking: ${bookedMonth}`
+      : `Unlocking: ${skill}`;
 
     const STRIPE_PAYMENT_LINKS = {
       skill: "https://buy.stripe.com/14AeVf9i9cvU7h33Eh57W00",
@@ -239,7 +242,15 @@
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 32) || "unknown-skill";
-      url.searchParams.set("client_reference_id", `${paymentType}-${skillId || "unknown"}-${skillSlug}`);
+      const monthSlug = String(bookedMonth || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 24);
+      const clientRef = paymentType === "walk" && monthSlug
+        ? `${paymentType}-${skillId || "unknown"}-${monthSlug}-${skillSlug}`
+        : `${paymentType}-${skillId || "unknown"}-${skillSlug}`;
+      url.searchParams.set("client_reference_id", clientRef);
       document.getElementById("doneMsg").style.display = "block";
       document.getElementById("doneMsg").textContent = "Redirecting to Stripe...";
       window.location.href = url.toString();

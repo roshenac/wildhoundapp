@@ -313,7 +313,21 @@
           const label = kind === "assessment"
             ? `${event.day} ${event.time}`
             : (event.month || `${event.day} ${event.time}`);
-          const payUrl = `payment.html?type=${encodeURIComponent(payType)}&skill=${encodeURIComponent(label)}&skillId=${event.id}&returnTo=${encodeURIComponent("booking.html?tab=booking")}`;
+          const getEventMonth = (evt) => {
+            const iso = String(evt && evt.dateISO ? evt.dateISO : "");
+            if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+              const dt = new Date(`${iso}T00:00:00`);
+              if (!Number.isNaN(dt.getTime())) {
+                return dt.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+              }
+            }
+            return String((evt && evt.month) || "").trim();
+          };
+          const eventMonth = kind === "hillwalk" ? getEventMonth(event) : "";
+          const monthParam = eventMonth
+            ? `&month=${encodeURIComponent(eventMonth)}`
+            : "";
+          const payUrl = `payment.html?type=${encodeURIComponent(payType)}&skill=${encodeURIComponent(label)}&skillId=${event.id}${monthParam}&returnTo=${encodeURIComponent("booking.html?tab=booking")}`;
           window.location.assign(payUrl);
           showToast("Complete payment in Stripe. Paid status should be updated from Stripe confirmation.");
         }
