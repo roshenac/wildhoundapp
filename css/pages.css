@@ -2,6 +2,18 @@
   color: var(--muted);
   font-size: 0.85rem;
 }
+.network-pill {
+  min-width: 78px;
+  text-align: center;
+  border-color: #9bb59b;
+  background: #e7f1e9;
+  color: #244631;
+}
+.network-pill.offline {
+  border-color: #d8b08a;
+  background: #f8ece3;
+  color: #7a4a2a;
+}
 
 #skills h1 {
   margin-bottom: 12px;
@@ -176,14 +188,19 @@
     .backup-tools {
       margin-top: 10px;
       display: grid;
-      gap: 8px;
+      gap: 10px;
+      align-items: start;
     }
     .backup-tools .sync-state {
       margin-top: 0;
     }
     .backup-actions {
       margin-top: 0;
-      justify-content: flex-start;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .backup-actions .btn-secondary {
+      flex: 1 1 220px;
     }
     .log-select-row {
       display: flex;
@@ -276,6 +293,14 @@
         width: min(760px, calc(100% - 24px));
       }
       .filter-drawer { padding: 10px; }
+      .backup-tools {
+        grid-template-columns: 1fr auto;
+        column-gap: 14px;
+      }
+      .backup-actions {
+        justify-content: flex-end;
+        align-items: center;
+      }
     }
 
     @media (max-width: 759px) {
@@ -300,5 +325,18 @@
       }
       #rewardsLadder .reward-claim-btn {
         width: 100%;
+      }
+      .backup-actions {
+        justify-content: flex-start;
+      }
+      .backup-actions .btn-secondary {
+        width: 100%;
+      }
+      .modal {
+        max-height: min(84vh, calc(100vh - 20px));
+      }
+      body.keyboard-open .bottom-nav,
+      body.keyboard-open .mobile-sticky-cta {
+        display: none !important;
       }
     }

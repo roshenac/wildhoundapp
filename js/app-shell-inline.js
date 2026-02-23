@@ -360,6 +360,7 @@ window.WH_APP_SHELL = `
         <summary>Unlocking Rules</summary>
         <ul class="guide-list">
           <li>Skills can be unlocked via hill walk code or purchase flow.</li>
+          <li>After Stripe success, you are returned to Skills and prompted to enter your unlock code.</li>
           <li><strong>Trail Etiquette Pro</strong> only unlocks after skills 1 to 13 are all passed.</li>
           <li>Unlocked skills are color-coded by status across Dashboard and Skills tabs.</li>
         </ul>

@@ -1,3 +1,18 @@
+    function getSyncStatusText() {
+      const fmt = (iso) => {
+        if (!iso) return "";
+        const dt = new Date(iso);
+        if (Number.isNaN(dt.getTime())) return "";
+        return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      };
+      if (state.eventsSyncStatus === "loading") return "Checking latest events...";
+      if (state.eventsSyncStatus === "error") return state.eventsSyncMessage || "Could not sync latest events.";
+      const syncTime = fmt(state.eventsLastSyncedAt);
+      return syncTime
+        ? `Events are up to date (last sync ${syncTime})`
+        : "Events are up to date.";
+    }
+
     function renderDashboard() {
       const rank = getRank(state.points);
       const unlocked = unlockedSkills();
@@ -22,26 +37,13 @@
       document.getElementById("statSkillsPassed").textContent = skillsPassed;
       const dashboardSyncEl = document.getElementById("dashboardSyncState");
       if (dashboardSyncEl) {
-        const fmt = (iso) => {
-          if (!iso) return "";
-          const dt = new Date(iso);
-          if (Number.isNaN(dt.getTime())) return "";
-          return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        };
-        const syncTime = fmt(state.eventsLastSyncedAt);
-        if (state.eventsSyncStatus === "ready") {
-          dashboardSyncEl.textContent = syncTime ? `Sync status: Up to date (last sync ${syncTime})` : "Sync status: Up to date";
-          dashboardSyncEl.classList.remove("warn");
-        } else if (state.eventsSyncStatus === "loading") {
-          dashboardSyncEl.textContent = "Sync status: Checking latest events...";
-          dashboardSyncEl.classList.remove("warn");
-        } else if (state.eventsSyncStatus === "error") {
-          dashboardSyncEl.textContent = "Sync status: Could not sync latest events.";
-          dashboardSyncEl.classList.add("warn");
-        } else {
-          dashboardSyncEl.textContent = "Sync status: Not checked yet.";
-          dashboardSyncEl.classList.remove("warn");
-        }
+        dashboardSyncEl.textContent = `Sync status: ${getSyncStatusText()}`;
+        dashboardSyncEl.classList.toggle("warn", state.eventsSyncStatus === "error");
+      }
+      const aboutSyncEl = document.getElementById("aboutSyncState");
+      if (aboutSyncEl) {
+        aboutSyncEl.textContent = `Sync status: ${getSyncStatusText()}`;
+        aboutSyncEl.classList.toggle("warn", state.eventsSyncStatus === "error");
       }
       const backupTextEl = document.getElementById("dashboardBackupText");
       const lastBackupEl = document.getElementById("dashboardLastBackup");
@@ -356,8 +358,9 @@
       panel.style.display = state.practicePanelOpen ? "block" : "none";
       const logs = state.practiceLogs[selected.id] || [];
       document.getElementById("practiceLogCount").textContent = logs.length;
+      const recentLogs = logs.slice(0, 20);
       document.getElementById("practiceLogList").innerHTML = logs.length
-        ? logs.map(log => `
+        ? recentLogs.map(log => `
           <div class="log-item">
             <strong>${log.date}</strong> - ${log.duration} min - ${log.focus}
             <div class="muted">${log.notes || "No notes added."}</div>
@@ -368,6 +371,9 @@
           </div>
         `).join("")
         : `<div class="log-item">No logs yet for this skill.</div>`;
+      if (logs.length > recentLogs.length) {
+        document.getElementById("practiceLogList").innerHTML += `<div class="log-item muted">Showing newest ${recentLogs.length} of ${logs.length} logs. Use Logged tab to view all.</div>`;
+      }
 
       const dateInput = document.getElementById("practiceDate");
       if (dateInput && !dateInput.value) {
@@ -578,9 +584,10 @@
             ? (state.eventsSyncMessage || "Could not sync latest events.")
             : (state.eventsSyncMessage || "Events are up to date.");
         const syncTime = formatSyncTime(state.eventsLastSyncedAt);
+        const offlineText = navigator.onLine === false ? `Offline mode. Showing cached events.${syncTime ? " " : ""}` : "";
         syncEl.innerHTML = syncTime
-          ? `${statusText}<br><span class="muted">Last synced at ${syncTime}</span>`
-          : statusText;
+          ? `${offlineText}${statusText}<br><span class="muted">Last synced at ${syncTime}</span>`
+          : `${offlineText}${statusText}`;
         syncEl.classList.toggle("warn", state.eventsSyncStatus === "error");
       }
 
@@ -853,15 +860,18 @@
       renderAll();
     }
 
-    function renderAll() {
+    function renderAll(options = {}) {
       recalculatePointsFromHistory();
       renderDashboard();
       renderGlanceChips();
       renderSkills();
       renderSkillDetail();
-      renderRewards();
-      renderBooking();
-      renderLoggedSkills();
+      const active = document.querySelector(".screen.active");
+      const activeId = active ? active.id : "";
+      const forceAll = Boolean(options.forceAll);
+      if (forceAll || activeId === "rewards") renderRewards();
+      if (forceAll || activeId === "booking") renderBooking();
+      if (forceAll || activeId === "logged") renderLoggedSkills();
       updateStickyCta();
       persistState();
     }

@@ -1,24 +1,58 @@
 {
   "name": "Wild Hound",
   "short_name": "Wild Hound",
+  "id": "/wildhoundapp/",
   "description": "Wild Hound dog skill progression tracking app.",
   "start_url": "/wildhoundapp/dashboard.html",
   "scope": "/wildhoundapp/",
+  "display_override": ["standalone", "minimal-ui"],
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#efe8d3",
   "theme_color": "#1d3525",
+  "categories": ["lifestyle", "health", "education"],
   "icons": [
     {
       "src": "/wildhoundapp/icon-192-v3.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/wildhoundapp/icon-192-v3.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/wildhoundapp/icon-512-v3.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/wildhoundapp/icon-512-v3.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/wildhoundapp/apple-touch-icon-v3.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book Walk",
+      "short_name": "Book",
+      "url": "/wildhoundapp/booking.html?tab=booking"
+    },
+    {
+      "name": "Open Skills",
+      "short_name": "Skills",
+      "url": "/wildhoundapp/skills.html?tab=skills"
     }
   ]
 }

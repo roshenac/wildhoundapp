@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Wild Hound Club trail dog progression app" />
   <link rel="icon" type="image/png" sizes="192x192" href="/wildhoundapp/icon-192-v3.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/wildhoundapp/apple-touch-icon-v3.png" />
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/wildhoundapp/apple-touch-icon-v3.png" />
@@ -126,8 +128,10 @@
       <div class="btn-row">
         <button class="btn-primary" id="payBtn" type="button">Pay with Stripe</button>
         <button class="btn-secondary" id="backToAppBtn" type="button">Back to App</button>
+        <button class="btn-secondary" id="paymentCheckBtn" type="button">I Already Paid</button>
       </div>
       <div class="done" id="doneMsg">Redirecting to Stripe...</div>
+      <p class="muted" style="margin-top:8px;">Payment status may take a short moment to reflect. Use “I Already Paid” to return and re-check your bookings or skill unlock flow.</p>
     </div>
   </div>
 
@@ -204,6 +208,11 @@
 
     document.getElementById("payBtn").addEventListener("click", () => {
       const returnTo = resolveSafeReturnTo(returnToRaw);
+      try {
+        if (returnTo) localStorage.setItem("wildhound_last_return_to", returnTo);
+      } catch (e) {
+        // Ignore storage errors.
+      }
       if (isTestMode) {
         const unlockCode = paymentType === "skill" && skillId ? `SKILL${skillId}` : "";
         const done = document.getElementById("doneMsg");
@@ -232,12 +241,25 @@
         .slice(0, 32) || "unknown-skill";
       url.searchParams.set("client_reference_id", `${paymentType}-${skillId || "unknown"}-${skillSlug}`);
       document.getElementById("doneMsg").style.display = "block";
+      document.getElementById("doneMsg").textContent = "Redirecting to Stripe...";
       window.location.href = url.toString();
     });
 
-    document.getElementById("backToAppBtn").addEventListener("click", () => {
+    function resolveBackTarget() {
       const returnTo = resolveSafeReturnTo(returnToRaw);
-      const fallbackUrl = returnTo || "booking.html?tab=booking";
+      if (returnTo) return returnTo;
+      try {
+        const cached = localStorage.getItem("wildhound_last_return_to") || "";
+        const safeCached = resolveSafeReturnTo(cached);
+        if (safeCached) return safeCached;
+      } catch (e) {
+        // Ignore storage errors.
+      }
+      return "booking.html?tab=booking";
+    }
+
+    document.getElementById("backToAppBtn").addEventListener("click", () => {
+      const fallbackUrl = resolveBackTarget();
       const hasHistory = window.history.length > 1;
       const sameOriginReferrer = (() => {
         try {
@@ -258,6 +280,12 @@
       }
 
       window.location.assign(fallbackUrl);
+    });
+
+    document.getElementById("paymentCheckBtn").addEventListener("click", () => {
+      const target = resolveBackTarget();
+      const joiner = target.includes("?") ? "&" : "?";
+      window.location.assign(`${target}${joiner}payment_pending=1`);
     });
   </script>
 </body>

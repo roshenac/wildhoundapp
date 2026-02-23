@@ -1,5 +1,6 @@
 Wild Hound Codebook
 Single source file used by the app: js/codebook.js
+Remote override file (optional): codebook.json
 
 HILL WALK UNLOCK CODE
 Legacy fallback: CODE

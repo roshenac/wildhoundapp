@@ -36,6 +36,8 @@
       dismissedEventsVersion: "",
       hasPendingAppUpdate: false,
       lastBackupAt: "",
+      analyticsCounters: {},
+      codebookVersion: "",
       practiceLogs: {},
       skills: [
         { id: 1, name: "Loose-Lead Legends", desc: "Confident loose-lead skills across trail conditions.", unlocked: true, points: 60, progressStatus: "not_started" },
@@ -76,40 +78,97 @@
     const SAVED_APP_STATE_KEY = "wildhound_app_state_v1";
     const SAVED_SEEN_EVENTS_VERSION_KEY = "wildhound_seen_events_version";
     const SAVED_DISMISSED_EVENTS_VERSION_KEY = "wildhound_dismissed_events_version";
+    const SAVED_CODEBOOK_VERSION_KEY = "wildhound_codebook_version";
+    const APP_CONFIG = (typeof window !== "undefined" && window.WH_CONFIG && typeof window.WH_CONFIG === "object")
+      ? window.WH_CONFIG
+      : {};
+    const DEBUG_MODE = Boolean(APP_CONFIG.debug);
+    const APP_STATE_VERSION = Number(APP_CONFIG.stateVersion) || 2;
+    const PERSIST_DEBOUNCE_MS = Number(APP_CONFIG.persistDebounceMs) || 300;
     const CODEBOOK = (typeof window !== "undefined" && window.WH_CODEBOOK && typeof window.WH_CODEBOOK === "object")
       ? window.WH_CODEBOOK
       : {};
-    const HILL_WALK_UNLOCK_CODE = String(CODEBOOK.hillWalkUnlockCode || "CODE").trim().toUpperCase();
-    const HILL_WALK_UNLOCK_CODES_BY_SKILL_ID = CODEBOOK.hillWalkUnlockCodesBySkillId || {};
-    const PURCHASE_UNLOCK_CODES_BY_SKILL_ID = CODEBOOK.unlockCodesBySkillId || {};
-    const ASSESSMENT_PASS_CODES_BY_SKILL_ID = CODEBOOK.assessmentPassCodesBySkillId || {};
-    const ASSESSMENT_REWORK_CODES_BY_SKILL_ID = CODEBOOK.assessmentReworkCodesBySkillId || {};
+    let runtimeCodebook = (CODEBOOK && typeof CODEBOOK === "object")
+      ? JSON.parse(JSON.stringify(CODEBOOK))
+      : {};
     const SKILL_PAYMENT_PAGE_URL = "payment.html";
-    const REMOTE_EVENTS_URL = (typeof window !== "undefined" && window.WH_EVENTS_URL)
-      ? String(window.WH_EVENTS_URL)
-      : "events.json";
-    const REMOTE_EVENTS_REFRESH_MS = 5 * 60 * 1000;
+    const REMOTE_EVENTS_URL = String(APP_CONFIG.eventsUrl || "events.json");
+    const REMOTE_CODEBOOK_URL = String(APP_CONFIG.codebookUrl || "codebook.json");
+    const REMOTE_ANALYTICS_URL = String(APP_CONFIG.analyticsUrl || "");
+    const REMOTE_EVENTS_REFRESH_MS = Number(APP_CONFIG.remoteEventsRefreshMs) || (5 * 60 * 1000);
+    const MAX_BACKUP_BYTES = Number(APP_CONFIG.maxBackupBytes) || (2 * 1024 * 1024);
     const REMOTE_ASSESSMENT_RESET_APPLIED_KEY = "wildhound_assessment_reset_applied";
-    const REWARD_CLAIM_TALLY_URL = (typeof window !== "undefined" && window.WH_TALLY_REWARD_FORM_URL)
-      ? String(window.WH_TALLY_REWARD_FORM_URL)
-      : "https://tally.so/r/rj69o2";
+    const REWARD_CLAIM_TALLY_URL = String(APP_CONFIG.tallyRewardFormUrl || "https://tally.so/r/rj69o2");
     // Set to `true` to require installed-app mode, or `false` to allow normal browser use.
-    const ENFORCE_INSTALL_GATE = true;
+    const ENFORCE_INSTALL_GATE = Boolean(APP_CONFIG.enforceInstallGate);
     let deferredInstallPrompt = null;
     let unlockSkillModalSkillId = null;
+    let persistTimer = null;
+
+    function debugLog() {
+      if (!DEBUG_MODE || typeof console === "undefined") return;
+      try {
+        console.log.apply(console, ["[WildHound]"].concat(Array.from(arguments)));
+      } catch (error) {
+        // no-op
+      }
+    }
+
+    function getEventsValidator() {
+      if (window.WH_VALIDATORS && typeof window.WH_VALIDATORS.validateEventsPayload === "function") {
+        return window.WH_VALIDATORS.validateEventsPayload;
+      }
+      return function () { return { warnings: [], errors: [] }; };
+    }
+
+    function getCodebookValidator() {
+      if (window.WH_VALIDATORS && typeof window.WH_VALIDATORS.validateCodebookPayload === "function") {
+        return window.WH_VALIDATORS.validateCodebookPayload;
+      }
+      return function () { return { warnings: [], errors: [] }; };
+    }
+
+    function getEventsMerger() {
+      if (window.WH_EVENTS_SERVICE && typeof window.WH_EVENTS_SERVICE.mergeRemoteEvents === "function") {
+        return window.WH_EVENTS_SERVICE.mergeRemoteEvents;
+      }
+      return function (localEvents, remoteEvents) {
+        const localById = Object.fromEntries((localEvents || []).map((event) => [Number(event.id), event]));
+        return (remoteEvents || []).map((remote) => {
+          const local = localById[Number(remote.id)];
+          if (!local) return remote;
+          const merged = { ...remote };
+          if (local.status && local.status !== "pending") merged.status = local.status;
+          if (local.paymentStatus) merged.paymentStatus = local.paymentStatus;
+          if (Array.isArray(local.bookingPointHistoryIds)) merged.bookingPointHistoryIds = local.bookingPointHistoryIds;
+          return merged;
+        });
+      };
+    }
+
+    function getCodebookMerger() {
+      if (window.WH_CODEBOOK_SERVICE && typeof window.WH_CODEBOOK_SERVICE.mergeCodebook === "function") {
+        return window.WH_CODEBOOK_SERVICE.mergeCodebook;
+      }
+      return function (base, incoming) { return { ...(base || {}), ...(incoming || {}) }; };
+    }
 
     function loadPersistedState() {
       try {
         const raw = localStorage.getItem(SAVED_APP_STATE_KEY);
         if (raw) {
-          const saved = JSON.parse(raw);
+          const parsed = JSON.parse(raw);
+          const migrator = window.WH_STATE_STORE && typeof window.WH_STATE_STORE.migrateSnapshot === "function"
+            ? window.WH_STATE_STORE.migrateSnapshot
+            : function (snapshot) { return snapshot || {}; };
+          const saved = migrator(parsed, APP_STATE_VERSION);
           const keys = [
             "user", "points", "selectedSkillId", "practicePanelOpen", "bookingFilters",
             "rankBonusesAwarded", "completionMilestonesAwarded", "awardedEvents", "awardedSourceKeys",
             "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
             "claimedRewards", "rewardClaimDetails",
             "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
-            "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt"
+            "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt", "analyticsCounters"
           ];
           keys.forEach((key) => {
             if (saved[key] !== undefined) state[key] = saved[key];
@@ -120,10 +179,16 @@
         }
       } catch (e) {
         // Ignore storage access issues in preview environments.
+        debugLog("loadPersistedState failed", e);
       }
       if (!state.user || !String(state.user).trim()) state.user = "User";
       if ((!state.pointsHistory || !state.pointsHistory.length) && Number(state.points) > 0) {
         state.points = 0;
+      }
+      try {
+        state.codebookVersion = localStorage.getItem(SAVED_CODEBOOK_VERSION_KEY) || "";
+      } catch (error) {
+        state.codebookVersion = "";
       }
       state.toasts = [];
     }
@@ -153,6 +218,7 @@
       state.bookingOverrides = nextBookingOverrides;
 
       return {
+        stateVersion: APP_STATE_VERSION,
         user: state.user,
         points: state.points,
         selectedSkillId: state.selectedSkillId,
@@ -179,35 +245,108 @@
         loggedDateLimit: state.loggedDateLimit,
         loggedViewMode: state.loggedViewMode,
         skills: state.skills,
-        lastBackupAt: state.lastBackupAt
+        lastBackupAt: state.lastBackupAt,
+        analyticsCounters: state.analyticsCounters
       };
     }
 
-    function persistState() {
+    function flushPersistState() {
+      if (persistTimer) {
+        clearTimeout(persistTimer);
+        persistTimer = null;
+      }
       try {
         const snapshot = buildPersistedSnapshot();
         localStorage.setItem(SAVED_APP_STATE_KEY, JSON.stringify(snapshot));
       } catch (e) {
         // Ignore storage access issues in preview environments.
+        debugLog("flushPersistState failed", e);
       }
     }
 
-    function exportAppBackupJson() {
+    function persistState() {
+      if (persistTimer) clearTimeout(persistTimer);
+      persistTimer = setTimeout(flushPersistState, PERSIST_DEBOUNCE_MS);
+    }
+
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("pagehide", flushPersistState);
+      window.addEventListener("beforeunload", flushPersistState);
+    }
+
+    function normalizeUpperCode(value) {
+      return String(value || "").trim().toUpperCase();
+    }
+
+    function getHillWalkUnlockCode() {
+      return normalizeUpperCode(runtimeCodebook.hillWalkUnlockCode || "CODE");
+    }
+
+    function getHillWalkUnlockCodeForSkill(skillId) {
+      const bySkill = runtimeCodebook && runtimeCodebook.hillWalkUnlockCodesBySkillId;
+      return normalizeUpperCode(bySkill && bySkill[skillId]);
+    }
+
+    function getPurchaseUnlockCodeForSkill(skillId) {
+      const bySkill = runtimeCodebook && runtimeCodebook.unlockCodesBySkillId;
+      return normalizeUpperCode(bySkill && bySkill[skillId]);
+    }
+
+    function getAssessmentPassCodeForSkill(skillId) {
+      const bySkill = runtimeCodebook && runtimeCodebook.assessmentPassCodesBySkillId;
+      return normalizeUpperCode(bySkill && bySkill[skillId]);
+    }
+
+    function getAssessmentReworkCodeForSkill(skillId) {
+      const bySkill = runtimeCodebook && runtimeCodebook.assessmentReworkCodesBySkillId;
+      return normalizeUpperCode(bySkill && bySkill[skillId]);
+    }
+
+    async function exportAppBackupJson(passphrase) {
       const payload = {
         app: "wildhound",
-        backupVersion: 1,
+        backupVersion: 2,
         exportedAt: new Date().toISOString(),
         state: buildPersistedSnapshot()
       };
-      return JSON.stringify(payload, null, 2);
+      const plain = JSON.stringify(payload, null, 2);
+      const hasPassphrase = String(passphrase || "").trim().length > 0;
+      if (!hasPassphrase || !window.WH_BACKUP_SERVICE || !crypto || !crypto.subtle) {
+        return plain;
+      }
+      const encrypted = await window.WH_BACKUP_SERVICE.encryptJson(plain, String(passphrase));
+      return JSON.stringify({
+        app: "wildhound",
+        backupVersion: 2,
+        exportedAt: payload.exportedAt,
+        ...encrypted
+      }, null, 2);
     }
 
-    function importAppBackupJson(rawText) {
+    async function importAppBackupJson(rawText, passphrase) {
+      if (String(rawText || "").length > MAX_BACKUP_BYTES) {
+        return { ok: false, message: "Backup file is too large." };
+      }
       let parsed;
       try {
         parsed = JSON.parse(String(rawText || ""));
       } catch (error) {
         return { ok: false, message: "Backup file is not valid JSON." };
+      }
+      if (parsed && parsed.encrypted === true) {
+        if (!window.WH_BACKUP_SERVICE || !crypto || !crypto.subtle) {
+          return { ok: false, message: "This browser cannot decrypt encrypted backups." };
+        }
+        const pass = String(passphrase || "");
+        if (!pass) {
+          return { ok: false, needsPassphrase: true, message: "Passphrase required for this backup." };
+        }
+        try {
+          const plain = await window.WH_BACKUP_SERVICE.decryptJson(parsed, pass);
+          parsed = JSON.parse(plain);
+        } catch (error) {
+          return { ok: false, message: "Could not decrypt backup. Check passphrase." };
+        }
       }
       const incoming = (parsed && typeof parsed === "object" && parsed.state && typeof parsed.state === "object")
         ? parsed.state
@@ -215,6 +354,14 @@
       if (!incoming || typeof incoming !== "object") {
         return { ok: false, message: "Backup file does not contain app data." };
       }
+      if (Object.keys(incoming).length > 5000) {
+        return { ok: false, message: "Backup payload is too large or invalid." };
+      }
+
+      const migrator = window.WH_STATE_STORE && typeof window.WH_STATE_STORE.migrateSnapshot === "function"
+        ? window.WH_STATE_STORE.migrateSnapshot
+        : function (snapshot) { return snapshot || {}; };
+      const migratedIncoming = migrator(incoming, APP_STATE_VERSION);
 
       const keys = [
         "user", "points", "selectedSkillId", "practicePanelOpen", "bookingFilters",
@@ -222,10 +369,10 @@
         "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
         "claimedRewards", "rewardClaimDetails",
         "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
-        "loggedSkillLimits", "loggedDateLimit", "loggedViewMode"
+        "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt", "analyticsCounters"
       ];
       keys.forEach((key) => {
-        if (incoming[key] !== undefined) state[key] = incoming[key];
+        if (migratedIncoming[key] !== undefined) state[key] = migratedIncoming[key];
       });
 
       if (!state.user || !String(state.user).trim()) state.user = "User";
@@ -243,6 +390,76 @@
       renderAll();
       persistState();
       return { ok: true };
+    }
+
+    async function hydrateRemoteCodebook(options = {}) {
+      if (typeof fetch !== "function") return false;
+      if (typeof window !== "undefined" && window.location && window.location.protocol === "file:") return false;
+      try {
+        const response = await fetch(REMOTE_CODEBOOK_URL, { cache: "no-store" });
+        if (!response.ok) return false;
+        const payload = await response.json();
+        if (!payload || typeof payload !== "object") return false;
+        const check = getCodebookValidator()(payload);
+        if (check.errors.length) return false;
+        if (check.warnings.length && !options.silent) {
+          showToast(`Codebook check: ${check.warnings.length} warning(s).`, "warn");
+        }
+        runtimeCodebook = getCodebookMerger()(runtimeCodebook, payload);
+        if (payload.updatedAt) {
+          state.codebookVersion = String(payload.updatedAt);
+          try {
+            localStorage.setItem(SAVED_CODEBOOK_VERSION_KEY, state.codebookVersion);
+          } catch (error) {
+            // Ignore storage access issues in preview environments.
+            debugLog("hydrateRemoteCodebook set version failed", error);
+          }
+        }
+        if (!options.silent) showToast("Codebook synced.");
+        return true;
+      } catch (error) {
+        debugLog("hydrateRemoteCodebook failed", error);
+        return false;
+      }
+    }
+
+    function trackAnalytics(eventName, meta = {}) {
+      const key = String(eventName || "").trim();
+      if (!key) return;
+      if (!state.analyticsCounters || typeof state.analyticsCounters !== "object") state.analyticsCounters = {};
+      state.analyticsCounters[key] = (Number(state.analyticsCounters[key]) || 0) + 1;
+      persistState();
+      if (!REMOTE_ANALYTICS_URL) return;
+      const payload = {
+        event: key,
+        at: new Date().toISOString(),
+        tab: getInitialScreenFromUrl(),
+        meta: (meta && typeof meta === "object") ? meta : {}
+      };
+      const body = JSON.stringify(payload);
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: "application/json" });
+          navigator.sendBeacon(REMOTE_ANALYTICS_URL, blob);
+          return;
+        }
+      } catch (error) {
+        debugLog("trackAnalytics sendBeacon failed", error);
+      }
+      try {
+        fetch(REMOTE_ANALYTICS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          keepalive: true
+        });
+      } catch (error) {
+        debugLog("trackAnalytics fetch failed", error);
+      }
+    }
+
+    function validateEventsPayload(payload) {
+      return getEventsValidator()(payload);
     }
 
     function isStandaloneMode() {
@@ -402,18 +619,7 @@
     }
 
     function mergeRemoteEvents(localEvents, remoteEvents) {
-      const localById = Object.fromEntries((localEvents || []).map((event) => [Number(event.id), event]));
-      return (remoteEvents || []).map((remote) => {
-        const local = localById[Number(remote.id)];
-        if (!local) return remote;
-
-        // Keep user-specific booking state while allowing remote schedule/capacity updates.
-        const merged = { ...remote };
-        if (local.status && local.status !== "pending") merged.status = local.status;
-        if (local.paymentStatus) merged.paymentStatus = local.paymentStatus;
-        if (Array.isArray(local.bookingPointHistoryIds)) merged.bookingPointHistoryIds = local.bookingPointHistoryIds;
-        return merged;
-      });
+      return getEventsMerger()(localEvents, remoteEvents);
     }
 
     function applyAssessmentResetIfNeeded(payload) {
@@ -480,6 +686,14 @@
         ? window.WH_EVENTS_DATA
         : null;
       if (!payload) return false;
+      const localValidation = validateEventsPayload(payload);
+      if (localValidation.errors.length) {
+        setEventsSyncState("error", "Local events data is invalid.");
+        return false;
+      }
+      if (localValidation.warnings.length) {
+        setEventsSyncState("ready", `Events loaded with ${localValidation.warnings.length} warning(s).`);
+      }
       setEventsVersionFromPayload(payload, { fromRemote: false });
 
       const nextSlots = Array.isArray(payload.slots) ? payload.slots : [];
@@ -511,6 +725,14 @@
           setEventsSyncState("error", "Could not sync latest events.");
           return false;
         }
+        const validation = validateEventsPayload(payload);
+        if (validation.errors.length) {
+          setEventsSyncState("error", "Could not sync latest events (invalid data).");
+          return false;
+        }
+        if (validation.warnings.length && !silent) {
+          showToast(`Events check: ${validation.warnings.length} warning(s).`, "warn");
+        }
         setEventsVersionFromPayload(payload, { fromRemote: true });
 
         const currentSlots = JSON.stringify(state.slots || []);
@@ -538,6 +760,7 @@
         return changed;
       } catch (error) {
         setEventsSyncState("error", "Could not sync latest events.");
+        debugLog("hydrateRemoteEvents failed", error);
         return false;
       }
     }
@@ -784,9 +1007,10 @@
     }
 
     function clampPoints(value) {
-      let points = Number(value);
-      if (!Number.isFinite(points)) points = 0;
-      points = Math.max(0, Math.round(points));
+      const pointService = window.WH_POINTS_SERVICE;
+      let points = pointService && typeof pointService.clampPoints === "function"
+        ? pointService.clampPoints(value)
+        : Math.max(0, Math.round(Number(value) || 0));
       if (!hasMasterRequirements() && points > 1249) points = 1249;
       if (points > 1250) points = 1250;
       return points;
@@ -799,7 +1023,10 @@
         state.points = strict ? 0 : clampPoints(state.points);
         return state.points;
       }
-      const total = history.reduce((sum, entry) => sum + (Number(entry?.points) || 0), 0);
+      const pointService = window.WH_POINTS_SERVICE;
+      const total = pointService && typeof pointService.sumHistory === "function"
+        ? pointService.sumHistory(history)
+        : history.reduce((sum, entry) => sum + (Number(entry?.points) || 0), 0);
       state.points = clampPoints(total);
       return state.points;
     }
@@ -956,20 +1183,24 @@
     function submitUnlockCode() {
       if (!unlockSkillModalSkillId) return;
       const code = (document.getElementById("unlockCodeInput").value || "").trim().toUpperCase();
+      trackAnalytics("unlock_code_attempt", { skillId: unlockSkillModalSkillId });
       if (!code) {
         showToast("Enter a hill walk or purchase code to continue.", "warn");
+        trackAnalytics("unlock_code_invalid", { skillId: unlockSkillModalSkillId, reason: "empty" });
         return;
       }
-      const expectedHillWalkCode = String(HILL_WALK_UNLOCK_CODES_BY_SKILL_ID[unlockSkillModalSkillId] || "").toUpperCase();
-      const expectedPurchaseCode = String(PURCHASE_UNLOCK_CODES_BY_SKILL_ID[unlockSkillModalSkillId] || "").toUpperCase();
-      const isValid = code === expectedHillWalkCode || code === HILL_WALK_UNLOCK_CODE || code === expectedPurchaseCode;
+      const expectedHillWalkCode = getHillWalkUnlockCodeForSkill(unlockSkillModalSkillId);
+      const expectedPurchaseCode = getPurchaseUnlockCodeForSkill(unlockSkillModalSkillId);
+      const isValid = code === expectedHillWalkCode || code === getHillWalkUnlockCode() || code === expectedPurchaseCode;
       if (!isValid) {
         showToast("Invalid unlock code for this skill.", "warn");
+        trackAnalytics("unlock_code_invalid", { skillId: unlockSkillModalSkillId, reason: "mismatch" });
         return;
       }
       const targetSkillId = unlockSkillModalSkillId;
       closeUnlockSkillModal();
       unlockSkill(targetSkillId, "walk");
+      trackAnalytics("unlock_code_success", { skillId: targetSkillId });
     }
 
     function startPaymentUnlockFlow() {
@@ -977,7 +1208,8 @@
       const skill = state.skills.find((s) => s.id === unlockSkillModalSkillId);
       if (!skill) return;
 
-      const payUrl = `${SKILL_PAYMENT_PAGE_URL}?type=skill&skill=${encodeURIComponent(skill.name)}&skillId=${skill.id}&returnTo=${encodeURIComponent("skills.html")}`;
+      const returnTo = `skills.html?tab=skills&skillId=${skill.id}&paid=1`;
+      const payUrl = `${SKILL_PAYMENT_PAGE_URL}?type=skill&skill=${encodeURIComponent(skill.name)}&skillId=${skill.id}&returnTo=${encodeURIComponent(returnTo)}`;
       closeUnlockSkillModal();
       window.location.assign(payUrl);
     }
@@ -996,8 +1228,8 @@
         return;
       }
 
-      const expectedPassCode = String(ASSESSMENT_PASS_CODES_BY_SKILL_ID[skill.id] || "").toUpperCase();
-      const expectedReworkCode = String(ASSESSMENT_REWORK_CODES_BY_SKILL_ID[skill.id] || "").toUpperCase();
+      const expectedPassCode = getAssessmentPassCodeForSkill(skill.id);
+      const expectedReworkCode = getAssessmentReworkCodeForSkill(skill.id);
 
       if (code === expectedPassCode) {
         skill.progressStatus = "passed";
@@ -1008,6 +1240,7 @@
           state.skillAssessmentsPassed[skill.id] = true;
           renderAll();
         }
+        trackAnalytics("assessment_code_pass", { skillId: skill.id });
         return;
       }
 
@@ -1018,10 +1251,41 @@
         state.assessmentDiscountBySkill[skill.id] = 5;
         showToast("Needs More Work recorded. £5 assessment discount is now active until this skill passes.", "warn");
         renderAll();
+        trackAnalytics("assessment_code_rework", { skillId: skill.id });
         return;
       }
 
       showToast("Invalid assessor code for this skill.", "warn");
+      trackAnalytics("assessment_code_invalid", { skillId: skill.id });
+    }
+
+    function handlePostPaymentDeepLink() {
+      let url;
+      try {
+        url = new URL(window.location.href);
+      } catch (error) {
+        return;
+      }
+      if (url.searchParams.get("payment_pending") === "1") {
+        showToast("Payment marked as pending confirmation. Pull to refresh or tap Retry Sync if status has not updated yet.", "warn");
+        url.searchParams.delete("payment_pending");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      }
+      const paid = url.searchParams.get("paid") === "1" || url.searchParams.get("test_paid") === "1";
+      const skillId = Number(url.searchParams.get("skillId") || 0);
+      if (!paid || !skillId) return;
+      const skill = (state.skills || []).find((s) => Number(s.id) === skillId);
+      if (skill && !skill.unlocked) {
+        showScreen("skills");
+        renderSkills();
+        openUnlockSkillModal(skillId);
+        const codeSection = document.getElementById("unlockCodeSection");
+        if (codeSection) codeSection.style.display = "grid";
+        showToast("Payment complete. Enter your unlock code to unlock this skill.");
+      }
+      url.searchParams.delete("paid");
+      url.searchParams.delete("test_paid");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     }
 
     function normalizeScreenId(rawScreenId) {
@@ -1065,6 +1329,12 @@
         recalculatePointsFromHistory();
         renderGlanceChips();
         renderRewards();
+      }
+      if (activeTab === "booking" && typeof renderBooking === "function") {
+        renderBooking();
+      }
+      if (activeTab === "logged" && typeof renderLoggedSkills === "function") {
+        renderLoggedSkills();
       }
       updateStickyCta();
     }

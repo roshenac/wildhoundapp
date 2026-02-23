@@ -19,11 +19,27 @@
 
   function boot() {
     injectShell()
+      .then(function () { return loadScript('js/config.js'); })
+      .then(function () { return loadScript('js/validators.js'); })
+      .then(function () { return loadScript('js/services/state-store.js'); })
+      .then(function () { return loadScript('js/services/codebook-service.js'); })
+      .then(function () { return loadScript('js/services/events-service.js'); })
+      .then(function () { return loadScript('js/services/backup-service.js'); })
+      .then(function () { return loadScript('js/services/points-service.js'); })
       .then(function () { return loadScript('js/codebook.js'); })
       .then(function () { return loadScript('js/events-data.js'); })
       .then(function () { return loadScript('js/app-core.js'); })
       .then(function () { return loadScript('js/app-render.js'); })
       .then(function () { return loadScript('js/app-events.js'); })
+      .then(function () {
+        var cfg = (typeof window !== 'undefined' && window.WH_CONFIG && typeof window.WH_CONFIG === 'object')
+          ? window.WH_CONFIG
+          : {};
+        var enabled = cfg.serviceWorkerEnabled !== false;
+        var swPath = String(cfg.serviceWorkerPath || 'service-worker.js');
+        if (!enabled || !('serviceWorker' in navigator)) return;
+        navigator.serviceWorker.register(swPath).catch(function () {});
+      })
       .catch(function (err) {
         document.body.innerHTML = '<main style="padding:16px;font-family:Arial,sans-serif"><h1>Wild Hound</h1><p>Could not load app. ' + String(err && err.message ? err.message : err) + '</p></main>';
       });

@@ -1,3 +1,55 @@
+    const syncTaskQueue = [];
+
+    function updateNetworkStatusPill() {
+      const pill = document.getElementById("networkStatusPill");
+      if (!pill) return;
+      const online = navigator.onLine !== false;
+      pill.textContent = online ? "Online" : "Offline";
+      pill.classList.toggle("offline", !online);
+    }
+
+    function queueSyncTask(taskName) {
+      if (!taskName) return;
+      if (syncTaskQueue.includes(taskName)) return;
+      syncTaskQueue.push(taskName);
+    }
+
+    function flushSyncQueue() {
+      if (navigator.onLine === false) return;
+      while (syncTaskQueue.length) {
+        const task = syncTaskQueue.shift();
+        if (task === "events-sync") {
+          hydrateRemoteCodebook({ silent: true });
+          hydrateRemoteEvents({ silent: false }).finally(() => {
+            renderAll();
+          });
+        }
+      }
+    }
+
+    async function validateBackupPayload(rawText) {
+      const maxBytes = (window.WH_CONFIG && Number(window.WH_CONFIG.maxBackupBytes)) || (2 * 1024 * 1024);
+      if (String(rawText || "").length > maxBytes) {
+        return { ok: false, message: "Backup file is too large." };
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(String(rawText || ""));
+      } catch (error) {
+        return { ok: false, message: "Backup JSON is invalid." };
+      }
+      if (parsed && parsed.encrypted === true) {
+        return { ok: true, message: "Encrypted backup looks valid. You will need a passphrase to import it." };
+      }
+      const incoming = (parsed && typeof parsed === "object" && parsed.state && typeof parsed.state === "object")
+        ? parsed.state
+        : parsed;
+      if (!incoming || typeof incoming !== "object") {
+        return { ok: false, message: "Backup file does not contain app data." };
+      }
+      return { ok: true, message: "Backup file structure looks valid." };
+    }
+
     document.addEventListener("click", (e) => {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
@@ -89,6 +141,7 @@
           ? String(rewardStep.getAttribute("data-reward-label") || rewardStep.getAttribute("data-base-label") || "Reward")
           : "Reward";
         if (!rewardKey) return;
+        trackAnalytics("reward_claim_start", { rewardKey });
         const claimable = rewardStep instanceof HTMLElement
           ? String(rewardStep.getAttribute("data-claimable") || "false") === "true"
           : false;
@@ -152,6 +205,11 @@
       }
       if (action === "unlock-skill") openUnlockSkillModal(id);
       if (action === "retry-events-sync") {
+        if (navigator.onLine === false) {
+          queueSyncTask("events-sync");
+          showToast("Offline now. Sync queued and will retry when online.", "warn");
+          return;
+        }
         hydrateRemoteEvents({ silent: false }).finally(() => {
           renderAll();
           persistState();
@@ -208,11 +266,13 @@
             slot.paymentStatus = "unpaid";
             slot.bookingPointHistoryIds = slot.bookingPointHistoryIds || [];
             showToast("Assessment booked.");
+            trackAnalytics("booking_booked_assessment", { eventId: slot.id });
             renderAll();
           } else {
             slot.waitlistCount += 1;
             slot.status = "waitlisted";
             showToast("Added to assessment waitlist.", "warn");
+            trackAnalytics("booking_waitlisted_assessment", { eventId: slot.id });
             renderAll();
           }
         }
@@ -228,11 +288,13 @@
             const attendanceAwardId = awardEvent("walk_attendance", { sourceKey: `booking:hillwalk:${walk.id}` });
             if (attendanceAwardId) walk.bookingPointHistoryIds.push(attendanceAwardId);
             showToast("Hill walk booked. Attendance logged.");
+            trackAnalytics("booking_booked_hillwalk", { eventId: walk.id });
             renderAll();
           } else {
             walk.waitlistCount += 1;
             walk.status = "waitlisted";
             showToast("Added to hill walk waitlist.", "warn");
+            trackAnalytics("booking_waitlisted_hillwalk", { eventId: walk.id });
             renderAll();
           }
         }
@@ -240,11 +302,12 @@
       if (action === "pay-now" && kind) {
         const event = getEventByKind(kind, id);
         if (event && event.status === "booked") {
+          trackAnalytics("payment_start", { kind, eventId: event.id });
           const payType = kind === "assessment" ? "assessment" : "walk";
           const label = kind === "assessment"
             ? `${event.day} ${event.time}`
             : (event.month || `${event.day} ${event.time}`);
-          const payUrl = `payment.html?type=${encodeURIComponent(payType)}&skill=${encodeURIComponent(label)}&skillId=${event.id}&returnTo=${encodeURIComponent("booking.html")}`;
+          const payUrl = `payment.html?type=${encodeURIComponent(payType)}&skill=${encodeURIComponent(label)}&skillId=${event.id}&returnTo=${encodeURIComponent("booking.html?tab=booking")}`;
           window.location.assign(payUrl);
           showToast("Complete payment in Stripe. Paid status should be updated from Stripe confirmation.");
         }
@@ -594,6 +657,7 @@
       const backdrop = document.getElementById("rewardClaimModalBackdrop");
       if (backdrop) backdrop.style.display = "none";
       showToast(`Reward claimed: ${ctx.rewardLabel}`);
+      trackAnalytics("reward_claim_submitted", { rewardKey: ctx.rewardKey });
       renderRewards();
       persistState();
     });
@@ -606,9 +670,17 @@
         if (backdrop) backdrop.style.display = "none";
       }
     });
-    document.getElementById("aboutExportDataBtn").addEventListener("click", () => {
+    document.getElementById("aboutExportDataBtn").addEventListener("click", async () => {
       try {
-        const json = exportAppBackupJson();
+        const passphrase = window.prompt("Optional: enter a backup passphrase (leave blank for none).", "") || "";
+        if (passphrase) {
+          const confirmPassphrase = window.prompt("Confirm backup passphrase", "") || "";
+          if (confirmPassphrase !== passphrase) {
+            showToast("Passphrase mismatch. Backup canceled.", "warn");
+            return;
+          }
+        }
+        const json = await exportAppBackupJson(passphrase);
         const blob = new Blob([json], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -633,14 +705,29 @@
       fileInput.value = "";
       fileInput.click();
     });
+    const aboutValidateDataBtn = document.getElementById("aboutValidateDataBtn");
+    if (aboutValidateDataBtn) {
+      aboutValidateDataBtn.addEventListener("click", () => {
+        const fileInput = document.getElementById("aboutValidateDataFile");
+        if (!(fileInput instanceof HTMLInputElement)) return;
+        fileInput.value = "";
+        fileInput.click();
+      });
+    }
     document.getElementById("aboutImportDataFile").addEventListener("change", (e) => {
       const input = e.target;
       if (!(input instanceof HTMLInputElement)) return;
       const file = input.files && input.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => {
-        const result = importAppBackupJson(String(reader.result || ""));
+      reader.onload = async () => {
+        const raw = String(reader.result || "");
+        let result = await importAppBackupJson(raw, "");
+        if (result && result.needsPassphrase) {
+          const passphrase = window.prompt("Enter backup passphrase");
+          if (passphrase === null) return;
+          result = await importAppBackupJson(raw, passphrase);
+        }
         if (result && result.ok) {
           showToast("Backup imported.");
           return;
@@ -652,6 +739,25 @@
       };
       reader.readAsText(file);
     });
+    const aboutValidateDataFile = document.getElementById("aboutValidateDataFile");
+    if (aboutValidateDataFile) {
+      aboutValidateDataFile.addEventListener("change", (e) => {
+        const input = e.target;
+        if (!(input instanceof HTMLInputElement)) return;
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const raw = String(reader.result || "");
+          const result = await validateBackupPayload(raw);
+          showToast(result.message, result.ok ? "success" : "warn");
+        };
+        reader.onerror = () => {
+          showToast("Could not read backup file.", "warn");
+        };
+        reader.readAsText(file);
+      });
+    }
     document.addEventListener("keydown", (e) => {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
@@ -682,14 +788,40 @@
       updateInstallGate();
     });
 
+    const keyboardTargets = ["input", "textarea", "select"];
+    document.addEventListener("focusin", (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const tag = target.tagName.toLowerCase();
+      if (!keyboardTargets.includes(tag)) return;
+      if (window.innerWidth <= 760) document.body.classList.add("keyboard-open");
+    });
+    document.addEventListener("focusout", () => {
+      setTimeout(() => document.body.classList.remove("keyboard-open"), 120);
+    });
+
+    window.addEventListener("online", () => {
+      updateNetworkStatusPill();
+      flushSyncQueue();
+      renderAll();
+    });
+    window.addEventListener("offline", () => {
+      updateNetworkStatusPill();
+      renderAll();
+    });
+
     syncAllSkillProgressFromSteps();
     updateInstallGate();
+    updateNetworkStatusPill();
     setEventsSyncState("loading", "Checking latest events...");
-    renderAll();
+    renderAll({ forceAll: true });
     showScreen(getInitialScreenFromUrl());
+    handlePostPaymentDeepLink();
+    hydrateRemoteCodebook({ silent: true });
     hydrateRemoteEvents({ silent: true }).finally(() => {
       renderAll();
     });
     setInterval(() => {
+      hydrateRemoteCodebook({ silent: true });
       hydrateRemoteEvents({ silent: true });
     }, REMOTE_EVENTS_REFRESH_MS);
