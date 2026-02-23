@@ -387,9 +387,11 @@
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredInstallPrompt = e;
+      updateInstallGate();
     });
     window.addEventListener("appinstalled", () => {
       deferredInstallPrompt = null;
+      updateInstallGate();
     });
     document.getElementById("installAppBtn").addEventListener("click", async () => {
       if (!deferredInstallPrompt) return;
@@ -400,8 +402,10 @@
         // Ignore prompt errors in preview environments.
       }
       deferredInstallPrompt = null;
+      updateInstallGate();
     });
 
     syncAllSkillProgressFromSteps();
     renderAll();
     showScreen(getInitialScreenFromUrl());
+    updateInstallGate();

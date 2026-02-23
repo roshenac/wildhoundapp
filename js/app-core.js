@@ -105,6 +105,8 @@
     const ASSESSMENT_PASS_CODE = "PASS5";
     const ASSESSMENT_MORE_WORK_CODE = "REWORK5";
     const SKILL_PAYMENT_PAGE_URL = "payment.html";
+    // Set to `true` to require installed-app mode, or `false` to allow normal browser use.
+    const ENFORCE_INSTALL_GATE = true;
     let deferredInstallPrompt = null;
     let unlockSkillModalSkillId = null;
 
@@ -174,6 +176,10 @@
     }
 
     function updateInstallGate() {
+      if (!ENFORCE_INSTALL_GATE) {
+        document.body.classList.remove("install-gated");
+        return false;
+      }
       const blocked = !isStandaloneMode();
       document.body.classList.toggle("install-gated", blocked);
       const installBtn = document.getElementById("installAppBtn");

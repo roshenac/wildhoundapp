@@ -33,9 +33,15 @@
       justify-content: center;
       background: var(--cream);
     }
-    /* Install gate disabled for normal browser use */
     body.install-gated .install-gate {
-      display: none;
+      display: flex;
+    }
+    body.install-gated .app,
+    body.install-gated .bottom-nav,
+    body.install-gated .mobile-sticky-cta,
+    body.install-gated .toast-wrap,
+    body.install-gated .modal-backdrop {
+      display: none !important;
     }
     .install-card {
       width: min(520px, 100%);
