@@ -102,7 +102,7 @@ window.WH_APP_SHELL = `
         <div class="backup-tools">
           <p class="muted sync-state" id="dashboardSyncState">Sync status: Checking latest events...</p>
           <div class="btn-row backup-actions">
-            <button class="btn-secondary" type="button" data-action="retry-events-sync">Retry Sync</button>
+            <button class="btn-secondary" type="button" data-action="retry-events-sync">Sync</button>
           <button class="btn-secondary" type="button" data-action="open-about-section" data-target="about-backup">Open Backup & Restore</button>
           </div>
         </div>
