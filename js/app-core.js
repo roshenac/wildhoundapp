@@ -114,6 +114,22 @@
       }
     }
 
+    function refreshAppVersionBanner() {
+      const versionTextEl = document.getElementById("appVersionText");
+      const versionBannerEl = document.getElementById("appVersionBanner");
+      if (!versionTextEl) return;
+      const fallback = String(APP_CONFIG.appVersion || "").trim();
+      const synced = String(state.eventsVersion || "").trim();
+      const fromEvents = synced || "";
+      const next = fromEvents || fallback || "loading...";
+      versionTextEl.textContent = next === "loading..." ? next : `v${next}`;
+      if (versionBannerEl) {
+        versionBannerEl.setAttribute("title", fromEvents
+          ? `Build from events sync: ${fromEvents}`
+          : `Build fallback: ${next}`);
+      }
+    }
+
     function getEventsValidator() {
       if (window.WH_VALIDATORS && typeof window.WH_VALIDATORS.validateEventsPayload === "function") {
         return window.WH_VALIDATORS.validateEventsPayload;
@@ -567,6 +583,7 @@
     function setEventsSyncState(status, message) {
       state.eventsSyncStatus = String(status || "idle");
       state.eventsSyncMessage = String(message || "");
+      refreshAppVersionBanner();
     }
 
     function markEventsSyncedNow() {
@@ -601,12 +618,14 @@
         state.seenEventsVersion = version;
         saveSeenEventsVersion(version);
         state.hasPendingAppUpdate = false;
+        refreshAppVersionBanner();
         return;
       }
 
       state.hasPendingAppUpdate = fromRemote
         && version !== state.seenEventsVersion
         && version !== state.dismissedEventsVersion;
+      refreshAppVersionBanner();
     }
 
     function acknowledgePendingUpdate() {
