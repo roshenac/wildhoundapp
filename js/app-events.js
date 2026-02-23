@@ -442,6 +442,10 @@
       const focus = document.getElementById("practiceFocus").value;
       const notes = document.getElementById("practiceNotes").value.trim();
       if (!date || !duration) return;
+      if (!Number.isFinite(duration) || duration < 1 || duration > 1440) {
+        showToast("Duration must be between 1 and 1440 minutes.", "warn");
+        return;
+      }
 
       if (!state.practiceLogs[skill.id]) state.practiceLogs[skill.id] = [];
       const getIsoWeekKey = (dateText) => {
@@ -530,7 +534,7 @@
       const focus = document.getElementById("logEditStep").value.trim();
       const duration = Number(document.getElementById("logEditDuration").value);
       const notes = document.getElementById("logEditComment").value.trim();
-      if (!targetSkillId || !date || !focus || Number.isNaN(duration) || duration <= 0) {
+      if (!targetSkillId || !date || !focus || Number.isNaN(duration) || duration < 1 || duration > 1440) {
         showToast("Please complete all required fields.", "warn");
         return;
       }
@@ -591,6 +595,19 @@
       const checks = getSkillStepChecks(skillId);
       const wasComplete = isStepComplete(skillId, step);
       checks[step][item] = target.checked;
+
+      // Keep stages in order: if an earlier stage is unticked, all later stages untick too.
+      if (!target.checked && step >= 1 && step <= 3) {
+        for (let laterStep = step + 1; laterStep <= 3; laterStep += 1) {
+          if (!Array.isArray(checks[laterStep])) checks[laterStep] = [false];
+          checks[laterStep][0] = false;
+        }
+        // If any core stage is unticked, Stage 5 stretch must also untick.
+        if (state.stage5StretchDoneBySkill && state.stage5StretchDoneBySkill[skillId]) {
+          delete state.stage5StretchDoneBySkill[skillId];
+        }
+      }
+
       const isCompleteNow = isStepComplete(skillId, step);
       if (step >= 1 && step <= 3) {
         const stageSourceKey = `stage-complete:${skillId}:${step}`;

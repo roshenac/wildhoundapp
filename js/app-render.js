@@ -136,6 +136,7 @@
 
     function renderSkills() {
       const container = document.getElementById("skillsGrid");
+      const unlockPoints = (POINT_MAP && POINT_MAP.unlock_skill && Number(POINT_MAP.unlock_skill.points)) || 0;
       container.innerHTML = state.skills.map(skill => {
         const progress = skill.unlocked ? getProgressMeta(skill) : null;
         const trailEtiquetteLocked = skill.id === 14 && !areFirstThirteenSkillsPassed();
@@ -154,7 +155,7 @@
               ? `<button class="btn-secondary" data-action="view-skill" data-id="${skill.id}">View Skill</button>`
               : trailEtiquetteLocked
                 ? `<button class="btn-secondary" disabled>Pass Skills 1-13 First</button>`
-                : `<button class="btn-primary" data-action="unlock-skill" data-id="${skill.id}">Unlock Skill</button>`}
+                : `<button class="btn-primary" data-action="unlock-skill" data-id="${skill.id}">Unlock Skill (+${unlockPoints} pts)</button>`}
           </div>
           ${trailEtiquetteLocked ? `<p class="muted">Unlocks only after all first 13 skills are passed.</p>` : ``}
         </article>
@@ -199,13 +200,16 @@
       const checks = getSkillStepChecks(skillId);
       const skill = state.skills.find((s) => s.id === skillId);
       const stage4Passed = Boolean(skill && skill.progressStatus === "passed");
+      const stagePoints = (POINT_MAP && POINT_MAP.pass_stage && Number(POINT_MAP.pass_stage.points)) || 0;
+      const assessmentPoints = (POINT_MAP && POINT_MAP.pass_skill_assessment && Number(POINT_MAP.pass_skill_assessment.points)) || 0;
       return [1, 2, 3, 4].map((stepNum) => {
         const unlocked = isStepUnlocked(skillId, stepNum);
         const complete = isStepComplete(skillId, stepNum);
         if (stepNum === 4) {
+          const stage4Heading = `Stage 4 (+${assessmentPoints}pts): Pass Criteria`;
           return `
             <details class="${unlocked ? "" : "step-locked"}" ${unlocked ? "open" : ""}>
-              <summary>Stage 4 ${unlocked ? "(Pass Criteria)" : "(Locked)"} ${stage4Passed ? "✓" : ""}</summary>
+              <summary>${stage4Heading} ${unlocked ? "" : "(Locked)"} ${stage4Passed ? "✓" : ""}</summary>
               <div class="checklist">
                 <div class="muted">${(cfg.stages[4] || "").replace(/^Stage\s+\d+\s*-\s*/i, "")}</div>
                 ${stage4Passed ? `<div class="muted"><strong>${skill.name} passed assessment.</strong></div>` : ""}
@@ -220,13 +224,26 @@
           `;
         }
 
+        const stageDescriptionBase = (cfg.stages[stepNum] || "").replace(/^Stage\s+\d+\s*-\s*/i, "");
+        const stageDescription = stepNum === 1
+          ? stageDescriptionBase.replace(/^Teaching Basics:\s*/i, "")
+          : stepNum === 2
+            ? stageDescriptionBase.replace(/^Building Reliability:\s*/i, "")
+            : stepNum === 3
+              ? stageDescriptionBase.replace(/^Real-World Practice:\s*/i, "")
+              : stageDescriptionBase;
+        const stageHeadingLabel = String(stageDescriptionBase.split(":")[0] || "").trim();
+        const stageHeading = stageHeadingLabel
+          ? `Stage ${stepNum} (+${stagePoints} pts): ${stageHeadingLabel}`
+          : `Stage ${stepNum} (+${stagePoints} pts)`;
+
         return `
           <details class="${unlocked ? "" : "step-locked"}" ${(unlocked && !complete) ? "open" : ""}>
-            <summary>Stage ${stepNum} ${complete ? "✓" : (unlocked ? "" : "(Locked)")}</summary>
+            <summary>${stageHeading} ${complete ? "✓" : (unlocked ? "" : "(Locked)")}</summary>
             <div class="checklist">
               <label class="check-item">
                 <input type="checkbox" data-step="${stepNum}" data-item="0" ${checks[stepNum][0] ? "checked" : ""} ${unlocked ? "" : "disabled"}>
-                ${(cfg.stages[stepNum] || "").replace(/^Stage\s+\d+\s*-\s*/i, "")}
+                ${stageDescription}
               </label>
             </div>
           </details>
@@ -262,6 +279,10 @@
     }
 
     function renderSkillDetail() {
+      const logTrainingPoints = (POINT_MAP && POINT_MAP.log_training && Number(POINT_MAP.log_training.points)) || 0;
+      const practiceBtn = document.getElementById("practiceGainBtn");
+      if (practiceBtn) practiceBtn.textContent = `Log Practice (+${logTrainingPoints} pts)`;
+
       let selected = state.skills.find(s => s.id === state.selectedSkillId);
       if (!selected || !selected.unlocked) {
         selected = unlockedSkills()[0];
@@ -273,7 +294,8 @@
         document.getElementById("detailDescription").textContent = "Unlock a skill from Skills Overview to begin.";
         document.getElementById("detailStatus").textContent = "Locked";
         document.getElementById("stepsContainer").innerHTML = "";
-        document.getElementById("level5Heading").textContent = "Stage 5 (Locked)";
+        const stage5Points = (POINT_MAP && POINT_MAP.master_skill && Number(POINT_MAP.master_skill.points)) || 0;
+        document.getElementById("level5Heading").textContent = `Stage 5 (+${stage5Points} pts): Stretch Goal (Locked)`;
         document.getElementById("trailStandardText").textContent = "";
         document.getElementById("trailStandardText").style.display = "none";
         document.getElementById("stage5Details").classList.add("step-locked");
@@ -300,13 +322,16 @@
       const stage4Unlocked = isStepUnlocked(selected.id, 4);
       const skillContent = SKILL_STAGE_CONTENT[selected.id] || SKILL_STAGE_CONTENT[1];
       const isPassed = selected.progressStatus === "passed";
+      const stages123Complete = [1, 2, 3].every((n) => isStepComplete(selected.id, n));
+      const stage5Unlocked = isPassed && stages123Complete;
       const stretchDone = Boolean(state.stage5StretchDoneBySkill[selected.id]);
+      const stage5Points = (POINT_MAP && POINT_MAP.master_skill && Number(POINT_MAP.master_skill.points)) || 0;
       const stage5Details = document.getElementById("stage5Details");
       const stage5Text = document.getElementById("trailStandardText");
-      document.getElementById("level5Heading").textContent = isPassed
-        ? (stretchDone ? "Stage 5: Stretch Goal ✓" : "Stage 5: Stretch Goal")
-        : "Stage 5 (Locked)";
-      if (isPassed) {
+      document.getElementById("level5Heading").textContent = stage5Unlocked
+        ? (stretchDone ? `Stage 5 (+${stage5Points} pts): Stretch Goal ✓` : `Stage 5 (+${stage5Points} pts): Stretch Goal`)
+        : `Stage 5 (+${stage5Points} pts): Stretch Goal (Locked)`;
+      if (stage5Unlocked) {
         stage5Details.classList.remove("step-locked");
         stage5Details.setAttribute("open", "");
         stage5Text.style.display = "none";
@@ -319,15 +344,13 @@
       }
       const stage5StretchBox = document.getElementById("stage5StretchBox");
       if (stage5StretchBox) {
-        stage5StretchBox.style.display = isPassed ? "grid" : "none";
-        stage5StretchBox.innerHTML = isPassed
-          ? `
-            <label class="check-item">
-              <input type="checkbox" id="stage5StretchCheck" ${stretchDone ? "checked" : ""}>
-              ${skillContent.stretch}
-            </label>
-          `
-          : "";
+        stage5StretchBox.style.display = "grid";
+        stage5StretchBox.innerHTML = `
+          <label class="check-item">
+            <input type="checkbox" id="stage5StretchCheck" ${stretchDone ? "checked" : ""} ${stage5Unlocked ? "" : "disabled"}>
+            ${skillContent.stretch}
+          </label>
+        `;
       }
       const evidenceDone = Boolean(state.skillEvidenceSubmitted[selected.id]);
       const evidenceBtn = document.getElementById("submitEvidenceBtn");
@@ -443,13 +466,25 @@
       const groups = Object.entries(POINT_RULES || {});
       const formatGroupTitle = (key) => key.replace(/_/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase());
       document.getElementById("pointsRuleSummary").innerHTML = groups.map(([groupKey, rules]) => {
-        const items = (rules || []).map(rule => `${rule.label}: +${rule.points}`).join("<br>");
+        const items = (rules || []).map(rule => `${rule.label}: +${rule.points} pts`).join("<br>");
         return `<strong>${formatGroupTitle(groupKey)}</strong><br>${items}`;
       }).concat([
         `<strong>Log Safeguard</strong><br>Training log points are removed if that log is deleted within 14 days.`
       ]).join("<br><br>");
 
-      document.querySelectorAll("#rewardsLadder .step").forEach((step, index) => {
+      const ladderSteps = Array.from(document.querySelectorAll("#rewardsLadder .step"));
+      let currentReachedThresholdStep = null;
+      ladderSteps.forEach((step) => {
+        const kind = step.getAttribute("data-kind");
+        if (kind) return;
+        const threshold = Number(step.getAttribute("data-threshold"));
+        if (!Number.isFinite(threshold) || threshold <= 0) return;
+        const isMasterStep = threshold === 1250;
+        const reached = isMasterStep ? (state.points >= threshold && hasMasterRequirements()) : state.points >= threshold;
+        if (reached) currentReachedThresholdStep = step;
+      });
+
+      ladderSteps.forEach((step, index) => {
         const kind = step.getAttribute("data-kind");
         const threshold = Number(step.getAttribute("data-threshold"));
         const walkGoal = Number(step.getAttribute("data-walks"));
@@ -459,7 +494,11 @@
           : kind === "walks-attended"
             ? walksAttendedCount() >= walkGoal
           : (isMasterStep ? (state.points >= threshold && hasMasterRequirements()) : state.points >= threshold);
+        const isCurrentTier = !kind && reached && step === currentReachedThresholdStep;
         step.classList.toggle("reached", reached);
+        step.classList.toggle("reward-state-complete", reached && !isCurrentTier);
+        step.classList.toggle("reward-state-current", isCurrentTier);
+        step.classList.toggle("reward-state-locked", !reached);
 
         const fallbackBase = step.getAttribute("data-base-label") || step.textContent.trim();
         step.setAttribute("data-base-label", fallbackBase);
@@ -494,6 +533,11 @@
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;");
+        const statusText = isCurrentTier
+          ? "Current"
+          : reached
+            ? "Completed"
+            : "Locked";
         const buttonHtml = isTrailStarter
           ? `<span class="muted reward-step-status">${reached ? "Auto Unlocked" : "Locked"}</span>`
           : `<button
@@ -505,7 +549,10 @@
             >${btnText}</button>`;
         step.innerHTML = `
           <div class="inline reward-step-row">
-            <span class="reward-step-label">${escapedLabel}</span>
+            <div class="reward-step-main">
+              <span class="reward-state-chip">${statusText}</span>
+              <span class="reward-step-label">${escapedLabel}</span>
+            </div>
             ${buttonHtml}
           </div>
         `;
@@ -674,11 +721,12 @@
           : status === "waitlisted" ? "Waitlisted"
           : "Passed"
       );
+      const walkBookingPoints = (POINT_MAP && POINT_MAP.walk_attendance && Number(POINT_MAP.walk_attendance.points)) || 0;
 
       const renderEventCard = (event) => {
         const paymentState = event.paymentStatus || "unpaid";
         const primaryAction = event.status === "pending"
-          ? `<button class="btn-primary" data-action="${event.eventType === "assessment" ? "book-slot" : "book-walk"}" data-id="${event.id}">${event.waitlistOnly ? "Join Waitlist" : (event.eventType === "assessment" ? "Book" : "Book Walk")}</button>`
+          ? `<button class="btn-primary" data-action="${event.eventType === "assessment" ? "book-slot" : "book-walk"}" data-id="${event.id}">${event.waitlistOnly ? "Join Waitlist" : (event.eventType === "assessment" ? "Book" : `Book Walk (+${walkBookingPoints} pts)`)}</button>`
           : event.status === "booked" && paymentState === "paid"
             ? ""
             : event.status === "booked"

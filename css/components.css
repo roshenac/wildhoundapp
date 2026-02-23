@@ -176,14 +176,63 @@
     }
 
     .step.reached::before { background: var(--gold); }
+    .step.reward-state-current {
+      border-color: #9c4a3c;
+      background: #f7ebe7;
+      box-shadow: 0 0 0 2px rgba(156, 74, 60, 0.16);
+    }
+    .step.reward-state-current::before {
+      background: #9c4a3c;
+    }
+    .step.reward-state-locked {
+      opacity: 0.72;
+      background: #f4f0e6;
+    }
+    .step.reward-state-locked::before {
+      background: #bcb5a2;
+    }
 
     .reward-step-row {
       align-items: flex-start;
       gap: 10px;
     }
-    .reward-step-label {
+    .reward-step-main {
       flex: 1 1 auto;
       min-width: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .reward-state-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid #bdb5a0;
+      background: #f0ece1;
+      color: #655f52;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+    }
+    .step.reward-state-complete .reward-state-chip {
+      border-color: #c0a658;
+      background: #efe2bf;
+      color: #57461c;
+    }
+    .step.reward-state-current .reward-state-chip {
+      border-color: #a65a4c;
+      background: #f2d9d2;
+      color: #6b2f26;
+    }
+    .step.reward-state-locked .reward-state-chip {
+      border-color: #cfc8b8;
+      background: #ebe7dd;
+      color: #7a7568;
+    }
+    .reward-step-label {
       line-height: 1.4;
     }
     .reward-claim-btn {

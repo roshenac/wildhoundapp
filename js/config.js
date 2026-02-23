@@ -1,5 +1,5 @@
 window.WH_CONFIG = Object.assign({
-  appVersion: "2026.02.23-9",
+  appVersion: "2026.02.23-5",
   debug: false,
   enforceInstallGate: true,
   eventsUrl: "events.json",

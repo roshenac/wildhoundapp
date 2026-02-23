@@ -128,6 +128,7 @@ window.WH_APP_SHELL = `
         <span class="glance-chip" data-glance-points>Points: 0</span>
       </div>
       <p class="muted" style="margin-bottom: 12px;">14 Wild Hound skills arranged by progression.</p>
+      <p class="muted" style="margin-bottom: 12px;"><strong>Pricing:</strong> Skill unlock £4.99 (or free via related hill walk), assessment day £40.</p>
       <div class="skills-grid" id="skillsGrid"></div>
     </section>
 
@@ -156,7 +157,7 @@ window.WH_APP_SHELL = `
 
         <div class="btn-row">
           <button class="btn-gold" id="submitEvidenceBtn">Book In For Skill Assessment</button>
-          <button class="btn-secondary" id="practiceGainBtn">Log Practice</button>
+          <button class="btn-secondary" id="practiceGainBtn">Log Practice (+2 pts)</button>
         </div>
 
         <div class="card" id="practiceLogPanel" style="margin-top: 10px; display: none;">
@@ -167,10 +168,10 @@ window.WH_APP_SHELL = `
               Date
               <input type="date" id="practiceDate" autocomplete="off" required />
             </label>
-            <label>
-              Duration (minutes)
-              <input type="number" id="practiceDuration" min="5" step="5" value="20" inputmode="numeric" autocomplete="off" required />
-            </label>
+              <label>
+                Duration (minutes)
+                <input type="number" id="practiceDuration" min="1" max="1440" step="1" value="20" inputmode="numeric" autocomplete="off" required />
+              </label>
             <label>
               Focus Area
               <select id="practiceFocus">
@@ -257,6 +258,7 @@ window.WH_APP_SHELL = `
         <span class="glance-chip" data-glance-rank>Rank: -</span>
         <span class="glance-chip" data-glance-points>Points: 0</span>
       </div>
+      <p class="muted" style="margin-bottom: 12px;"><strong>Pricing:</strong> Monthly hill walk £25 per dog (includes free unlock access to that walk’s related skill). Assessment day £40.</p>
       <div class="card mobile-sticky-controls" id="bookingControlsCard">
         <h3>Booking Overview</h3>
         <p class="muted">See your upcoming bookings, available events, and past/completed events in one place.</p>
@@ -387,7 +389,7 @@ window.WH_APP_SHELL = `
           <li>Booking and canceling adjusts related points based on your event history.</li>
           <li>Payment opens Stripe checkout for skill unlocks, walks, and assessments.</li>
           <li>Skill unlocks are completed when you enter your post-payment unlock code in the app.</li>
-          <li><strong>Costs:</strong> Skill unlock £15 (or free via related hill walk), monthly hill walk £25, assessment day £40.</li>
+          <li><strong>Costs:</strong> Skill unlock £4.99 (or free via related hill walk), monthly hill walk £25, assessment day £40.</li>
         </ul>
       </details>
 
@@ -505,7 +507,7 @@ window.WH_APP_SHELL = `
       </label>
       <label>
         Duration (minutes)
-        <input type="number" id="logEditDuration" min="1" inputmode="numeric" autocomplete="off" required />
+        <input type="number" id="logEditDuration" min="1" max="1440" step="1" inputmode="numeric" autocomplete="off" required />
       </label>
       <label>
         Comment
