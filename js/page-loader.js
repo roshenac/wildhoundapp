@@ -85,6 +85,26 @@
         if (!enabled || !('serviceWorker' in navigator)) return;
         navigator.serviceWorker.register(swPath, { updateViaCache: 'none' })
           .then(function (registration) {
+            function activateWaitingWorker() {
+              if (registration.waiting) {
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+            }
+
+            if (registration.waiting) {
+              activateWaitingWorker();
+            }
+
+            registration.addEventListener('updatefound', function () {
+              var newWorker = registration.installing;
+              if (!newWorker) return;
+              newWorker.addEventListener('statechange', function () {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  activateWaitingWorker();
+                }
+              });
+            });
+
             try { registration.update(); } catch (e) {}
             setInterval(function () {
               try { registration.update(); } catch (e) {}

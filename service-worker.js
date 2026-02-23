@@ -55,6 +55,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+self.addEventListener('message', (event) => {
+  if (!event || !event.data) return;
+  if (event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 function isDataEndpoint(url) {
   return url.pathname.endsWith('/events.json') || url.pathname.endsWith('/codebook.json');
 }
