@@ -16,6 +16,13 @@
     });
   }
 
+  function loadConfigScript() {
+    var freshSrc = 'js/config.js?v=' + Date.now();
+    return loadScript(freshSrc).catch(function () {
+      return loadScript('js/config.js');
+    });
+  }
+
   function renderVersionFromConfig() {
     var cfg = (typeof window !== 'undefined' && window.WH_CONFIG && typeof window.WH_CONFIG === 'object')
       ? window.WH_CONFIG
@@ -55,7 +62,7 @@
 
   function boot() {
     injectShell()
-      .then(function () { return loadScript('js/config.js'); })
+      .then(function () { return loadConfigScript(); })
       .then(function () { renderVersionFromConfig(); })
       .then(function () { return loadScript('js/validators.js'); })
       .then(function () { return loadScript('js/services/state-store.js'); })
