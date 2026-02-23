@@ -31,7 +31,7 @@ window.WH_APP_SHELL = `
     </div>
   </header>
   <div class="update-test-banner" id="appVersionBanner" aria-live="polite">
-    Live Build: <strong id="appVersionText">v2026.02.23-1</strong>
+    Live Build: <strong id="appVersionText">loading...</strong>
   </div>
 
   <main>
