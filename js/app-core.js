@@ -130,6 +130,9 @@
         // Ignore storage access issues in preview environments.
       }
       if (!state.user || !String(state.user).trim()) state.user = "User";
+      if ((!state.pointsHistory || !state.pointsHistory.length) && Number(state.points) > 0) {
+        state.points = 0;
+      }
       state.toasts = [];
     }
 
@@ -635,10 +638,11 @@
       return points;
     }
 
-    function recalculatePointsFromHistory() {
+    function recalculatePointsFromHistory(options = {}) {
+      const strict = Boolean(options.strict);
       const history = state.pointsHistory || [];
       if (!history.length) {
-        state.points = clampPoints(state.points);
+        state.points = strict ? 0 : clampPoints(state.points);
         return state.points;
       }
       const total = history.reduce((sum, entry) => sum + (Number(entry?.points) || 0), 0);
@@ -712,7 +716,7 @@
         }
         return true;
       });
-      if (removedPoints > 0) recalculatePointsFromHistory();
+      if (removedPoints > 0) recalculatePointsFromHistory({ strict: true });
       return removedPoints;
     }
 
