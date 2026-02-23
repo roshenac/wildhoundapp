@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'whc-v1.0.1';
+const CACHE_VERSION = 'whc-v1.0.2';
 const APP_SHELL_CACHE = `whc-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `whc-runtime-${CACHE_VERSION}`;
 
@@ -59,20 +59,42 @@ function isDataEndpoint(url) {
   return url.pathname.endsWith('/events.json') || url.pathname.endsWith('/codebook.json');
 }
 
+function isMutableAppAsset(url, request) {
+  if (request.mode === 'navigate') return true;
+  return (
+    url.pathname.endsWith('.html')
+    || url.pathname.endsWith('.js')
+    || url.pathname.endsWith('.css')
+    || url.pathname.endsWith('.webmanifest')
+  );
+}
+
+function cachePutSafe(request, response, cacheName) {
+  if (!response || response.status !== 200) return;
+  const clone = response.clone();
+  caches.open(cacheName).then((cache) => cache.put(request, clone));
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (isDataEndpoint(url)) {
+  if (isDataEndpoint(url) || isMutableAppAsset(url, event.request)) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const clone = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, clone));
+          cachePutSafe(event.request, response, RUNTIME_CACHE);
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(async () => {
+          const cached = await caches.match(event.request);
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match('/wildhoundapp/index.html');
+          }
+          throw new Error('offline');
+        })
     );
     return;
   }

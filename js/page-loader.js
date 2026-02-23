@@ -64,7 +64,20 @@
         var enabled = cfg.serviceWorkerEnabled !== false;
         var swPath = String(cfg.serviceWorkerPath || 'service-worker.js');
         if (!enabled || !('serviceWorker' in navigator)) return;
-        navigator.serviceWorker.register(swPath).catch(function () {});
+        navigator.serviceWorker.register(swPath, { updateViaCache: 'none' })
+          .then(function (registration) {
+            try { registration.update(); } catch (e) {}
+            setInterval(function () {
+              try { registration.update(); } catch (e) {}
+            }, 60 * 1000);
+          })
+          .catch(function () {});
+        var reloadedForController = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (reloadedForController) return;
+          reloadedForController = true;
+          window.location.reload();
+        });
       })
       .catch(function (err) {
         document.body.innerHTML = '<main style="padding:16px;font-family:Arial,sans-serif"><h1>Wild Hound Club App</h1><p>Could not load app. ' + String(err && err.message ? err.message : err) + '</p></main>';
