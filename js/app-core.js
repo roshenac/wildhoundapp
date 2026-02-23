@@ -105,6 +105,10 @@
     const ASSESSMENT_PASS_CODE = "PASS5";
     const ASSESSMENT_MORE_WORK_CODE = "REWORK5";
     const SKILL_PAYMENT_PAGE_URL = "payment.html";
+    const REMOTE_EVENTS_URL = (typeof window !== "undefined" && window.WH_EVENTS_URL)
+      ? String(window.WH_EVENTS_URL)
+      : "events.json";
+    const REMOTE_EVENTS_REFRESH_MS = 5 * 60 * 1000;
     // Set to `true` to require installed-app mode, or `false` to allow normal browser use.
     const ENFORCE_INSTALL_GATE = true;
     let deferredInstallPrompt = null;
@@ -252,6 +256,53 @@
 
       state.slots = (Array.isArray(state.slots) ? state.slots : []).map(normalizeSlot).filter(Boolean);
       state.monthlyWalks = (Array.isArray(state.monthlyWalks) ? state.monthlyWalks : []).map(normalizeWalk).filter(Boolean);
+    }
+
+    function mergeRemoteEvents(localEvents, remoteEvents) {
+      const localById = Object.fromEntries((localEvents || []).map((event) => [Number(event.id), event]));
+      return (remoteEvents || []).map((remote) => {
+        const local = localById[Number(remote.id)];
+        if (!local) return remote;
+
+        // Keep user-specific booking state while allowing remote schedule/capacity updates.
+        const merged = { ...remote };
+        if (local.status && local.status !== "pending") merged.status = local.status;
+        if (local.paymentStatus) merged.paymentStatus = local.paymentStatus;
+        if (Array.isArray(local.bookingPointHistoryIds)) merged.bookingPointHistoryIds = local.bookingPointHistoryIds;
+        return merged;
+      });
+    }
+
+    async function hydrateRemoteEvents(options = {}) {
+      if (typeof fetch !== "function") return false;
+      const silent = Boolean(options.silent);
+      try {
+        const response = await fetch(REMOTE_EVENTS_URL, { cache: "no-store" });
+        if (!response.ok) return false;
+        const payload = await response.json();
+        if (!payload || typeof payload !== "object") return false;
+
+        const currentSlots = JSON.stringify(state.slots || []);
+        const currentWalks = JSON.stringify(state.monthlyWalks || []);
+
+        const nextSlots = Array.isArray(payload.slots) ? payload.slots : [];
+        const nextWalks = Array.isArray(payload.monthlyWalks) ? payload.monthlyWalks : [];
+
+        state.slots = mergeRemoteEvents(state.slots, nextSlots);
+        state.monthlyWalks = mergeRemoteEvents(state.monthlyWalks, nextWalks);
+        normalizeBookingData();
+        normalizeSkillCatalog();
+
+        const changed = currentSlots !== JSON.stringify(state.slots || [])
+          || currentWalks !== JSON.stringify(state.monthlyWalks || []);
+        if (changed) {
+          renderAll();
+          if (!silent) showToast("Events updated from server.");
+        }
+        return changed;
+      } catch (error) {
+        return false;
+      }
     }
 
     function normalizeSkillCatalog() {
@@ -451,7 +502,10 @@
       if (points >= 1300 && hasMasterRequirements()) return { name: "Trail Dog Master", min: 1300, next: null, nextName: null };
       if (points >= 900) return { name: "Trail Dog Expert", min: 900, next: 1300, nextName: "Trail Dog Master" };
       if (points >= 600) return { name: "Trail Dog Pathfinder", min: 600, next: 900, nextName: "Trail Dog Expert" };
-      return { name: "Trail Dog Rookie", min: 0, next: 600, nextName: "Trail Dog Pathfinder" };
+      if (points >= 500) return { name: "Trail Dog Advanced", min: 500, next: 600, nextName: "Trail Dog Pathfinder" };
+      if (points >= 250) return { name: "Trail Dog Explorer", min: 250, next: 500, nextName: "Trail Dog Advanced" };
+      if (points >= 100) return { name: "Trail Dog Rookie", min: 100, next: 250, nextName: "Trail Dog Explorer" };
+      return { name: "Trail Dog Starter", min: 0, next: 100, nextName: "Trail Dog Rookie" };
     }
 
     function nextSkillToUnlock() {
@@ -665,13 +719,8 @@
       if (!skill) return;
 
       const payUrl = `${SKILL_PAYMENT_PAGE_URL}?type=skill&skill=${encodeURIComponent(skill.name)}&skillId=${skill.id}`;
-      const opened = window.open(payUrl, "_blank", "noopener,noreferrer");
-      if (!opened) window.location.href = payUrl;
-      const paid = window.confirm(`After completing payment for ${skill.name}, tap OK to unlock it now.`);
-      if (!paid) return;
-      const targetSkillId = unlockSkillModalSkillId;
       closeUnlockSkillModal();
-      unlockSkill(targetSkillId, "purchase");
+      window.location.assign(payUrl);
     }
 
     function applyAssessmentCodeForSelectedSkill(rawCode) {

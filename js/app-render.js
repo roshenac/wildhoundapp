@@ -35,7 +35,7 @@
       document.getElementById("progressPct").textContent = `${Math.round(pct)}%`;
       document.getElementById("progressLabel").textContent = nextRank
         ? `${Math.max(0, nextRank - state.points)} pts to ${rank.nextName}`
-        : "Trail Dog Master Achieved";
+        : "Top level achieved";
       if (rank.nextName === "Trail Dog Master" && state.points >= 1299 && !hasMasterRequirements()) {
         document.getElementById("progressLabel").textContent = `Master unlock needs ${skillsNeededForMaster} skills + ${walksNeededForMaster} walks`;
       }

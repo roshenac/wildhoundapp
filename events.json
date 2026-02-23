@@ -1,0 +1,90 @@
+{
+  "updatedAt": "2026-02-23T00:00:00Z",
+  "slots": [
+    {
+      "id": 1,
+      "day": "Saturday, Mar 7",
+      "time": "8:00 AM",
+      "dateISO": "2026-03-07",
+      "location": "Pine Ridge Trail",
+      "status": "pending",
+      "capacity": 10,
+      "bookedCount": 9,
+      "waitlistCount": 0
+    },
+    {
+      "id": 2,
+      "day": "Saturday, Mar 7",
+      "time": "9:30 AM",
+      "dateISO": "2026-03-07",
+      "location": "Pine Ridge Trail",
+      "status": "pending",
+      "capacity": 10,
+      "bookedCount": 8,
+      "waitlistCount": 0
+    },
+    {
+      "id": 3,
+      "day": "Sunday, Mar 15",
+      "time": "10:00 AM",
+      "dateISO": "2026-03-15",
+      "location": "North Bluff Loop",
+      "status": "pending",
+      "capacity": 8,
+      "bookedCount": 8,
+      "waitlistCount": 2
+    },
+    {
+      "id": 4,
+      "day": "Sunday, Mar 15",
+      "time": "11:30 AM",
+      "dateISO": "2026-03-15",
+      "location": "North Bluff Loop",
+      "status": "pending",
+      "capacity": 8,
+      "bookedCount": 7,
+      "waitlistCount": 0
+    }
+  ],
+  "monthlyWalks": [
+    {
+      "id": 101,
+      "month": "March Hill Walk",
+      "day": "Sunday, Mar 22",
+      "time": "7:30 AM",
+      "dateISO": "2026-03-22",
+      "location": "Cedar Ridge",
+      "skill": "Close & Behind",
+      "status": "pending",
+      "capacity": 12,
+      "bookedCount": 11,
+      "waitlistCount": 0
+    },
+    {
+      "id": 102,
+      "month": "April Hill Walk",
+      "day": "Sunday, Apr 19",
+      "time": "8:00 AM",
+      "dateISO": "2026-04-19",
+      "location": "Falcon Bluff",
+      "skill": "Loose-Lead Legends",
+      "status": "pending",
+      "capacity": 12,
+      "bookedCount": 12,
+      "waitlistCount": 3
+    },
+    {
+      "id": 103,
+      "month": "May Hill Walk",
+      "day": "Sunday, May 17",
+      "time": "8:30 AM",
+      "dateISO": "2026-05-17",
+      "location": "Summit Spur",
+      "skill": "Reliable Recalls",
+      "status": "pending",
+      "capacity": 12,
+      "bookedCount": 9,
+      "waitlistCount": 0
+    }
+  ]
+}

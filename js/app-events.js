@@ -116,8 +116,7 @@
             ? `${event.day} ${event.time}`
             : (event.month || `${event.day} ${event.time}`);
           const payUrl = `payment.html?type=${encodeURIComponent(payType)}&skill=${encodeURIComponent(label)}&skillId=${event.id}`;
-          const opened = window.open(payUrl, "_blank", "noopener,noreferrer");
-          if (!opened) window.location.href = payUrl;
+          window.location.assign(payUrl);
           showToast("Complete payment in Stripe. Paid status should be updated from Stripe confirmation.");
         }
       }
@@ -409,3 +408,7 @@
     renderAll();
     showScreen(getInitialScreenFromUrl());
     updateInstallGate();
+    hydrateRemoteEvents({ silent: true });
+    setInterval(() => {
+      hydrateRemoteEvents({ silent: true });
+    }, REMOTE_EVENTS_REFRESH_MS);
