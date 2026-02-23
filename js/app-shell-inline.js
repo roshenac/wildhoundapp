@@ -1,3 +1,4 @@
+// Auto-generated from app-shell.html. Do not edit directly.
 window.WH_APP_SHELL = `
 <section class="install-gate" id="installGate" aria-live="polite">
   <div class="install-card">
@@ -19,6 +20,7 @@ window.WH_APP_SHELL = `
     <div class="brand">
       Wild Hound Club
     </div>
+    <span class="pill network-pill" id="networkStatusPill" aria-live="polite">Online</span>
   </header>
 
   <main>
@@ -218,7 +220,6 @@ window.WH_APP_SHELL = `
 
       <details class="card collapse-card" open>
         <summary>Milestone Rewards</summary>
-        <p class="muted">Higher tiers now include gear, recognition, and premium trail experiences.</p>
         <p class="muted"><strong>Reward delivery:</strong> Physical rewards are currently available to UK residents only. Non-UK members receive certificates as digital email versions.</p>
         <div class="ladder" id="rewardsLadder">
           <div class="step" data-threshold="75">🧭 Trail Dog Starter (75 pts) - Digital Badge + App Title</div>
@@ -426,6 +427,7 @@ window.WH_APP_SHELL = `
           <li>Upcoming events and booking availability update automatically in the app.</li>
           <li>If you change phone or clear browser/app data, local progress may reset.</li>
         </ul>
+        <p class="muted sync-state" id="aboutSyncState">Sync status: Not checked yet.</p>
       </details>
 
       <details class="card collapse-card" id="about-backup">
@@ -434,7 +436,9 @@ window.WH_APP_SHELL = `
         <div class="btn-row">
           <button type="button" class="btn-secondary" id="aboutExportDataBtn">Export My Data</button>
           <button type="button" class="btn-secondary" id="aboutImportDataBtn">Import Backup</button>
+          <button type="button" class="btn-secondary" id="aboutValidateDataBtn">Check Backup File</button>
           <input type="file" id="aboutImportDataFile" accept="application/json,.json" style="display:none" />
+          <input type="file" id="aboutValidateDataFile" accept="application/json,.json" style="display:none" />
         </div>
       </details>
 
@@ -551,5 +555,4 @@ window.WH_APP_SHELL = `
     </div>
   </div>
 </div>
-
 `;

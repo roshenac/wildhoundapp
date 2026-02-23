@@ -420,6 +420,10 @@
         loggedAt,
         pointHistoryId
       });
+      if (pointHistoryId) {
+        const entry = (state.pointsHistory || []).find((row) => row && row.id === pointHistoryId);
+        if (entry) entry.label = `Log Training Session - ${skill.name}`;
+      }
       state.practicePanelOpen = false;
       document.getElementById("practiceNotes").value = "";
       showToast("Practice log saved.");
@@ -531,7 +535,13 @@
       if (step >= 1 && step <= 3) {
         const stageSourceKey = `stage-complete:${skillId}:${step}`;
         if (!wasComplete && isCompleteNow) {
-          awardEvent("pass_stage", { sourceKey: stageSourceKey, uniqueSource: true });
+          const skill = state.skills.find((s) => s.id === skillId);
+          const skillName = skill ? skill.name : `Skill ${skillId}`;
+          awardEvent("pass_stage", {
+            sourceKey: stageSourceKey,
+            uniqueSource: true,
+            label: `Pass Stage ${step} - ${skillName}`
+          });
         }
       }
       syncSkillProgressFromSteps(skillId);
@@ -548,7 +558,11 @@
       const masterySourceKey = `skill-mastered:${skill.id}`;
       if (target.checked) {
         state.stage5StretchDoneBySkill[skill.id] = true;
-        awardEvent("master_skill", { sourceKey: masterySourceKey, uniqueSource: true });
+        awardEvent("master_skill", {
+          sourceKey: masterySourceKey,
+          uniqueSource: true,
+          label: `Master Skill (Stage 5 Stretch Goal) - ${skill.name}`
+        });
       } else {
         delete state.stage5StretchDoneBySkill[skill.id];
       }

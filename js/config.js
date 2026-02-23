@@ -11,6 +11,7 @@ window.WH_CONFIG = Object.assign({
   tallyRewardFormUrl: "https://tally.so/r/rj69o2",
   serviceWorkerEnabled: true,
   serviceWorkerPath: "service-worker.js",
+  appShellUrl: "app-shell.html",
   stripe: {
     links: {
       skill: "https://buy.stripe.com/14AeVf9i9cvU7h33Eh57W00",

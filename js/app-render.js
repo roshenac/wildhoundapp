@@ -512,12 +512,35 @@
       });
 
       const history = document.getElementById("pointsHistoryList");
+      const resolveSkillNameFromSourceKey = (sourceKey) => {
+        const key = String(sourceKey || "");
+        if (!key) return "";
+        let skillId = null;
+        const stageMatch = key.match(/^stage-complete:(\d+):\d+$/);
+        const masteredMatch = key.match(/^skill-mastered:(\d+)$/);
+        const trainingMatch = key.match(/^training-log-week:[^:]+:(\d+):/);
+        if (stageMatch) skillId = Number(stageMatch[1]);
+        if (masteredMatch) skillId = Number(masteredMatch[1]);
+        if (trainingMatch) skillId = Number(trainingMatch[1]);
+        if (!Number.isFinite(skillId)) return "";
+        const skill = (state.skills || []).find((s) => Number(s.id) === skillId);
+        return skill ? skill.name : "";
+      };
+
+      const formatHistoryLabel = (item) => {
+        const base = String(item && item.label ? item.label : "Points Event");
+        const skillName = resolveSkillNameFromSourceKey(item && item.sourceKey);
+        if (!skillName) return base;
+        if (base.toLowerCase().includes(skillName.toLowerCase())) return base;
+        return `${base} - ${skillName}`;
+      };
+
       if (!state.pointsHistory.length) {
         history.innerHTML = `<div class="log-item">No point events yet.</div>`;
       } else {
         history.innerHTML = state.pointsHistory.slice(0, 12).map(item => `
           <div class="log-item">
-            <strong>+${item.points} pts</strong> - ${item.label}
+            <strong>+${item.points} pts</strong> - ${formatHistoryLabel(item)}
             <div class="muted">${item.when}</div>
           </div>
         `).join("");

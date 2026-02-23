@@ -1,4 +1,11 @@
 (function () {
+  function getShellUrl() {
+    var cfg = (typeof window !== 'undefined' && window.WH_CONFIG && typeof window.WH_CONFIG === 'object')
+      ? window.WH_CONFIG
+      : {};
+    return String(cfg.appShellUrl || 'app-shell.html');
+  }
+
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement('script');
@@ -10,6 +17,25 @@
   }
 
   function injectShell() {
+    var shellUrl = getShellUrl();
+    if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol !== 'file:') {
+      return fetch(shellUrl, { cache: 'no-store' })
+        .then(function (res) {
+          if (!res.ok) throw new Error('Shell fetch failed');
+          return res.text();
+        })
+        .then(function (html) {
+          if (!html || !html.trim()) throw new Error('Shell is empty');
+          document.body.innerHTML = html;
+        })
+        .catch(function () {
+          if (typeof window.WH_APP_SHELL === 'string' && window.WH_APP_SHELL.trim()) {
+            document.body.innerHTML = window.WH_APP_SHELL;
+            return;
+          }
+          throw new Error('App shell missing');
+        });
+    }
     if (typeof window.WH_APP_SHELL === 'string' && window.WH_APP_SHELL.trim()) {
       document.body.innerHTML = window.WH_APP_SHELL;
       return Promise.resolve();

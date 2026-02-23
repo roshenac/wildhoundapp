@@ -1073,14 +1073,15 @@
       const appliedPoints = updatePoints(rule.points);
       if (appliedPoints <= 0) return false;
       const historyId = `${Date.now()}-${Math.random().toString(16).slice(2, 9)}`;
+      const historyLabel = String(options.label || rule.label);
       state.pointsHistory.unshift({
         id: historyId,
-        label: rule.label,
+        label: historyLabel,
         points: appliedPoints,
         when: new Date().toLocaleString(),
         sourceKey
       });
-      showToast(`+${appliedPoints} pts: ${rule.label}`);
+      showToast(`+${appliedPoints} pts: ${historyLabel}`);
       if (rule.oneTime) state.awardedEvents[eventKey] = true;
       if (options.uniqueSource && sourceKey) {
         if (!state.awardedSourceKeys || typeof state.awardedSourceKeys !== "object") state.awardedSourceKeys = {};
