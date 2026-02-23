@@ -430,7 +430,7 @@
             )
           )
         );
-        const claimed = Boolean((state.claimedRewards || {})[rewardKey]) && hasSubmittedClaimDetails;
+        const claimed = reached && Boolean((state.claimedRewards || {})[rewardKey]) && hasSubmittedClaimDetails;
         const btnText = claimed ? "Claimed" : (reached ? "Claim Reward" : "Locked");
         const escapedLabel = fallbackBase
           .replace(/&/g, "&amp;")
