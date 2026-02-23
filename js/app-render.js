@@ -570,7 +570,7 @@
       };
 
       if (!state.pointsHistory.length) {
-        history.innerHTML = `<div class="log-item">No point events yet.</div>`;
+        history.innerHTML = `<div class="log-item"><span class="empty-emphasis">No points awarded yet.</span></div>`;
       } else {
         history.innerHTML = state.pointsHistory.slice(0, 12).map(item => `
           <div class="log-item">
@@ -664,7 +664,7 @@
           `;
           return;
         }
-        wrap.innerHTML = `<div class="card"><p class="muted">No events match the selected filters.</p></div>`;
+        wrap.innerHTML = `<div class="card"><p class="filter-empty">No events match the selected filters.</p></div>`;
         return;
       }
       const now = Date.now();
@@ -765,10 +765,14 @@
       });
 
       const html = [
-        renderSection("Your Upcoming Bookings", yourBookings, "You are not booked into any upcoming events yet."),
-        renderSection("Available to Book", availableToBook, "No upcoming events available for booking with the current filters."),
+        (state.bookingFilters.status === "pending"
+          ? ""
+          : renderSection("Your Upcoming Bookings", yourBookings, "You are not booked into any upcoming events yet.")),
+        (state.bookingFilters.status === "booked"
+          ? ""
+          : renderSection("Available to Book", availableToBook, "No upcoming events available for booking with the current filters.")),
         renderSection("Past & Completed", pastAndCompleted, "No past bookings yet.", true)
-      ].join("");
+      ].filter(Boolean).join("");
 
       wrap.innerHTML = html;
     }
@@ -804,7 +808,7 @@
 
       const container = document.getElementById("loggedSkillsList");
       if (!allLoggedSkills.length) {
-        container.innerHTML = `<div class="card"><p class="muted">No skills logged yet. Open a skill and save a practice log.</p></div>`;
+        container.innerHTML = `<div class="card"><p class="empty-emphasis">No skills logged yet. Open a skill and save a practice log.</p></div>`;
         return;
       }
 
