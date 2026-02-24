@@ -49,7 +49,7 @@ window.WH_APP_SHELL = `
           </div>
           <div class="meta-item card-clickable" data-action="open-rewards" role="button" tabindex="0" aria-label="Open points and rewards">
             <div class="meta-label">Trail Dog Rank</div>
-            <div class="meta-value" id="rankLabel">Trail Dog Rookie</div>
+            <div class="meta-value" id="rankLabel">No Rank Yet</div>
           </div>
           <div class="meta-item card-clickable" data-action="open-rewards" role="button" tabindex="0" aria-label="Open points and rewards">
             <div class="meta-label">Total Points</div>
@@ -57,7 +57,7 @@ window.WH_APP_SHELL = `
           </div>
           <div class="meta-item card-clickable" data-action="open-skills" role="button" tabindex="0" aria-label="Open skills">
             <div class="meta-label">Skills Unlocked</div>
-            <div class="meta-value" id="unlockedCount">0 / 14</div>
+            <div class="meta-value" id="unlockedCount">1 / 14</div>
           </div>
         </div>
         <div class="progress-wrap">

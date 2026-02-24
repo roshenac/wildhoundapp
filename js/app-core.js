@@ -1180,6 +1180,7 @@
       const startYear = 2026;
       const startMonthIndex = 2; // March (0-based)
       const monthsSinceStart = ((date.getFullYear() - startYear) * 12) + (date.getMonth() - startMonthIndex);
+      if (monthsSinceStart < 0) return monthlySkills[0];
       const totalSkills = monthlySkills.length;
       const skillIndex = ((monthsSinceStart % totalSkills) + totalSkills) % totalSkills;
       return monthlySkills[skillIndex] || monthlySkills[0];
