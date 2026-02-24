@@ -1116,8 +1116,8 @@
     if (typeof refreshAppVersionBanner === "function") refreshAppVersionBanner();
     updateNetworkStatusPill();
     setEventsSyncState("loading", "Checking latest events...");
-    renderAll({ forceAll: true });
     showScreen(getInitialScreenFromUrl());
+    renderAll({ forceAll: true });
     handlePostPaymentDeepLink();
     hydrateRemoteCodebook({ silent: true });
     hydrateRemoteEvents({ silent: true }).finally(() => {

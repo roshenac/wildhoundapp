@@ -32,7 +32,7 @@ window.WH_APP_SHELL = `
   </header>
 
   <main>
-    <section class="screen active" id="dashboard">
+    <section class="screen" id="dashboard">
       <h1>Progress Overview</h1>
       <div class="glance-row">
         <span class="glance-chip" data-glance-rank>Rank: -</span>
