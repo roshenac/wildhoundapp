@@ -219,12 +219,9 @@
             "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt", "analyticsCounters",
             "memberWalkBookingPendingById", "membershipActive", "membershipActivatedAt"
           ];
-          keys.forEach((key) => {
-            if (saved[key] !== undefined) state[key] = saved[key];
-          });
-        } else {
-          const savedName = localStorage.getItem(SAVED_USERNAME_KEY);
-          if (savedName && savedName.trim()) state.user = savedName.trim();
+        keys.forEach((key) => {
+          if (saved[key] !== undefined) state[key] = saved[key];
+        });
         }
       } catch (e) {
         // Ignore storage access issues in preview environments.
