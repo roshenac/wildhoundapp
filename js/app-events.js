@@ -90,6 +90,93 @@
       }
     }
 
+    function hasSubmittedClaimDetails(details) {
+      return Boolean(
+        details
+        && details.submittedViaTally === true
+      ) || Boolean(
+        details
+        && String(details.fullName || "").trim()
+        && (
+          (typeof details.address === "string" && String(details.address).trim())
+          || (
+            details.address
+            && String(details.address.line1 || "").trim()
+            && String(details.address.city || "").trim()
+            && String(details.address.postcode || "").trim()
+            && String(details.address.country || "").trim()
+          )
+        )
+      );
+    }
+
+    function isRewardAlreadyClaimed(rewardKey) {
+      if (!rewardKey) return false;
+      if (!state.claimedRewards || typeof state.claimedRewards !== "object") state.claimedRewards = {};
+      if (!state.rewardClaimDetails || typeof state.rewardClaimDetails !== "object") state.rewardClaimDetails = {};
+      const details = state.rewardClaimDetails[rewardKey];
+      return Boolean(state.claimedRewards[rewardKey]) && hasSubmittedClaimDetails(details);
+    }
+
+    function buildRewardClaimUrl(items) {
+      const safeItems = Array.isArray(items) ? items.filter((row) => row && row.key) : [];
+      if (!safeItems.length) return "";
+      const firstLabel = String(safeItems[0].label || "Reward");
+      const allLabels = safeItems.map((row) => String(row.label || "Reward")).join(" | ");
+      const allKeys = safeItems.map((row) => String(row.key)).join(",");
+      const url = new URL(REWARD_CLAIM_TALLY_URL, window.location.href);
+      url.searchParams.set("name", state.user || "User");
+      url.searchParams.set("Name", state.user || "User");
+      url.searchParams.set("reward", safeItems.length > 1 ? `${safeItems.length} rewards` : firstLabel);
+      url.searchParams.set("Reward", safeItems.length > 1 ? `${safeItems.length} rewards` : firstLabel);
+      url.searchParams.set("reward_list", allLabels);
+      url.searchParams.set("Reward_list", allLabels);
+      url.searchParams.set("points", String(state.points || 0));
+      url.searchParams.set("Points", String(state.points || 0));
+      url.searchParams.set("reward_key", safeItems.length > 1 ? allKeys : String(safeItems[0].key));
+      url.searchParams.set("Reward_key", safeItems.length > 1 ? allKeys : String(safeItems[0].key));
+      return url.toString();
+    }
+
+    function openRewardClaimModal(items) {
+      const safeItems = Array.isArray(items) ? items.filter((row) => row && row.key) : [];
+      if (!safeItems.length) {
+        showToast("No open rewards to claim.", "warn");
+        return false;
+      }
+      if (!REWARD_CLAIM_TALLY_URL) {
+        showToast("Claim form is not configured.", "warn");
+        return false;
+      }
+      try {
+        const claimUrl = buildRewardClaimUrl(safeItems);
+        const rewardKey = safeItems.length === 1 ? safeItems[0].key : "";
+        const rewardLabel = safeItems.length === 1 ? safeItems[0].label : `${safeItems.length} rewards`;
+        const rewardLabelsByKey = Object.fromEntries(safeItems.map((row) => [String(row.key), String(row.label || "Reward")]));
+        state.rewardClaimContext = {
+          rewardKey,
+          rewardLabel,
+          rewardKeys: safeItems.map((row) => String(row.key)),
+          rewardLabelsByKey,
+          claimUrl
+        };
+        const promptEl = document.getElementById("rewardClaimPrompt");
+        if (promptEl) {
+          promptEl.textContent = safeItems.length === 1
+            ? `Complete claim form: ${rewardLabel}`
+            : `Complete one form for ${safeItems.length} rewards.`;
+        }
+        const frame = document.getElementById("rewardClaimFrame");
+        if (frame) frame.setAttribute("src", claimUrl);
+        const backdrop = document.getElementById("rewardClaimModalBackdrop");
+        if (backdrop) backdrop.style.display = "flex";
+        return true;
+      } catch (error) {
+        showToast("Could not open claim form.", "warn");
+        return false;
+      }
+    }
+
     document.addEventListener("click", (e) => {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
@@ -189,59 +276,31 @@
           showToast("This reward is not unlocked yet.", "warn");
           return;
         }
-        if (!state.claimedRewards || typeof state.claimedRewards !== "object") state.claimedRewards = {};
-        if (!state.rewardClaimDetails || typeof state.rewardClaimDetails !== "object") state.rewardClaimDetails = {};
-        const details = state.rewardClaimDetails[rewardKey];
-        const hasSubmittedClaimDetails = Boolean(
-          details
-          && details.submittedViaTally === true
-        ) || Boolean(
-          details
-          && String(details.fullName || "").trim()
-          && (
-            (typeof details.address === "string" && String(details.address).trim())
-            || (
-              details.address
-              && String(details.address.line1 || "").trim()
-              && String(details.address.city || "").trim()
-              && String(details.address.postcode || "").trim()
-              && String(details.address.country || "").trim()
-            )
-          )
-        );
-        if (state.claimedRewards[rewardKey] && hasSubmittedClaimDetails) {
+        if (isRewardAlreadyClaimed(rewardKey)) {
           showToast("Reward already claimed.", "warn");
           return;
         }
-        if (!REWARD_CLAIM_TALLY_URL) {
-          showToast("Claim form is not configured.", "warn");
+        openRewardClaimModal([{ key: rewardKey, label: rewardLabel }]);
+      }
+      if (action === "claim-all-rewards") {
+        const steps = Array.from(document.querySelectorAll("#rewardsLadder .step"));
+        const openClaims = steps
+          .map((step) => {
+            const rewardKey = String(step.getAttribute("data-reward-key") || "");
+            const rewardLabel = String(step.getAttribute("data-reward-label") || step.getAttribute("data-base-label") || "Reward");
+            const claimable = String(step.getAttribute("data-claimable") || "false") === "true";
+            return { rewardKey, rewardLabel, claimable };
+          })
+          .filter((row) => row.claimable && row.rewardKey)
+          .filter((row) => row.rewardKey !== "threshold:75")
+          .filter((row) => !isRewardAlreadyClaimed(row.rewardKey))
+          .map((row) => ({ key: row.rewardKey, label: row.rewardLabel }));
+        if (!openClaims.length) {
+          showToast("No open rewards to claim right now.", "warn");
           return;
         }
-        const buildClaimUrl = () => {
-          const url = new URL(REWARD_CLAIM_TALLY_URL, window.location.href);
-          // Tally prefill keys must match your form field names/hidden fields.
-          url.searchParams.set("name", state.user || "User");
-          url.searchParams.set("Name", state.user || "User");
-          url.searchParams.set("reward", rewardLabel);
-          url.searchParams.set("Reward", rewardLabel);
-          url.searchParams.set("points", String(state.points || 0));
-          url.searchParams.set("Points", String(state.points || 0));
-          url.searchParams.set("reward_key", rewardKey);
-          url.searchParams.set("Reward_key", rewardKey);
-          return url.toString();
-        };
-        try {
-          const claimUrl = buildClaimUrl();
-          state.rewardClaimContext = { rewardKey, rewardLabel, claimUrl };
-          const promptEl = document.getElementById("rewardClaimPrompt");
-          if (promptEl) promptEl.textContent = `Complete claim form: ${rewardLabel}`;
-          const frame = document.getElementById("rewardClaimFrame");
-          if (frame) frame.setAttribute("src", claimUrl);
-          const backdrop = document.getElementById("rewardClaimModalBackdrop");
-          if (backdrop) backdrop.style.display = "flex";
-        } catch (error) {
-          showToast("Could not open claim form.", "warn");
-        }
+        trackAnalytics("reward_claim_start_all", { count: openClaims.length });
+        openRewardClaimModal(openClaims);
       }
       if (action === "unlock-skill") openUnlockSkillModal(id);
       if (action === "retry-events-sync") {
@@ -305,12 +364,18 @@
             slot.status = "booked";
             slot.paymentStatus = "unpaid";
             slot.bookingPointHistoryIds = slot.bookingPointHistoryIds || [];
+            if (typeof reportBookingCreated === "function") {
+              reportBookingCreated("assessment", slot, "booked");
+            }
             showToast("Assessment booked.");
             trackAnalytics("booking_booked_assessment", { eventId: slot.id });
             renderAll();
           } else {
             slot.waitlistCount += 1;
             slot.status = "waitlisted";
+            if (typeof reportBookingCreated === "function") {
+              reportBookingCreated("assessment", slot, "waitlisted");
+            }
             showToast("Added to assessment waitlist.", "warn");
             trackAnalytics("booking_waitlisted_assessment", { eventId: slot.id });
             renderAll();
@@ -320,6 +385,46 @@
       if (action === "book-walk") {
         const walk = state.monthlyWalks.find(w => w.id === id);
         if (walk && walk.status === "pending") {
+          if (typeof hasActiveMembership === "function" && hasActiveMembership()) {
+            if (!walk.waitlistOnly) {
+              walk.bookedCount += 1;
+              walk.status = "booked";
+              walk.paymentStatus = "paid";
+              walk.bookingPointHistoryIds = walk.bookingPointHistoryIds || [];
+              const walkLabel = walk.month
+                ? `Attend Monthly Walk - ${walk.month}`
+                : `Attend Monthly Walk - ${walk.day || "Upcoming Walk"}`;
+              const attendanceAwardId = awardEvent("walk_attendance", {
+                sourceKey: `booking:hillwalk:${walk.id}`,
+                label: walkLabel
+              });
+              if (attendanceAwardId) walk.bookingPointHistoryIds.push(attendanceAwardId);
+              if (typeof reportBookingCreated === "function") {
+                reportBookingCreated("hillwalk", walk, "booked");
+              }
+              if (state.memberWalkBookingPendingById) {
+                delete state.memberWalkBookingPendingById[String(walk.id)];
+              }
+              showToast("Hill walk booked.");
+              trackAnalytics("booking_booked_hillwalk_member", { eventId: walk.id });
+              renderAll();
+              persistState();
+            } else {
+              walk.waitlistCount += 1;
+              walk.status = "waitlisted";
+              if (typeof reportBookingCreated === "function") {
+                reportBookingCreated("hillwalk", walk, "waitlisted");
+              }
+              if (state.memberWalkBookingPendingById) {
+                delete state.memberWalkBookingPendingById[String(walk.id)];
+              }
+              showToast("Added to hill walk waitlist.");
+              trackAnalytics("booking_waitlisted_hillwalk_member", { eventId: walk.id });
+              renderAll();
+              persistState();
+            }
+            return;
+          }
           if (!walk.waitlistOnly) {
             walk.bookedCount += 1;
             walk.status = "booked";
@@ -333,12 +438,18 @@
               label: walkLabel
             });
             if (attendanceAwardId) walk.bookingPointHistoryIds.push(attendanceAwardId);
+            if (typeof reportBookingCreated === "function") {
+              reportBookingCreated("hillwalk", walk, "booked");
+            }
             showToast("Hill walk booked. Attendance logged.");
             trackAnalytics("booking_booked_hillwalk", { eventId: walk.id });
             renderAll();
           } else {
             walk.waitlistCount += 1;
             walk.status = "waitlisted";
+            if (typeof reportBookingCreated === "function") {
+              reportBookingCreated("hillwalk", walk, "waitlisted");
+            }
             showToast("Added to hill walk waitlist.", "warn");
             trackAnalytics("booking_waitlisted_hillwalk", { eventId: walk.id });
             renderAll();
@@ -384,12 +495,18 @@
       if (action === "cancel-booking" && kind) {
         const event = getEventByKind(kind, id);
         if (event && event.status === "booked") {
+          if (typeof reportBookingCancellation === "function") {
+            reportBookingCancellation(kind, event);
+          }
           event.status = "pending";
           delete event.paymentStatus;
-          const removedPoints = removePointsHistoryByIds(event.bookingPointHistoryIds || []);
+          if (kind === "hillwalk" && state.memberWalkBookingPendingById) {
+            delete state.memberWalkBookingPendingById[String(event.id)];
+          }
+          removePointsHistoryByIds(event.bookingPointHistoryIds || []);
           event.bookingPointHistoryIds = [];
           if (event.bookedCount > 0) event.bookedCount -= 1;
-          showToast(removedPoints > 0 ? `Booking canceled. -${removedPoints} pts removed.` : "Booking canceled.");
+          showToast("Booking canceled.");
           renderAll();
         }
       }
@@ -564,20 +681,17 @@
       }
       const ok = window.confirm(`Delete ${selected.length} selected log${selected.length === 1 ? "" : "s"}?`);
       if (!ok) return;
-      let removedPointsTotal = 0;
       Object.keys(state.practiceLogs).forEach((skillId) => {
         state.practiceLogs[skillId] = (state.practiceLogs[skillId] || []).filter((log) => {
           if (!state.selectedLogIds[log.id]) return true;
-          removedPointsTotal += removePracticeLogPointsIfEligible(log);
+          removePracticeLogPointsIfEligible(log);
           return false;
         });
       });
       state.selectedLogIds = {};
       state.logSelectionMode = false;
       showToast(
-        removedPointsTotal > 0
-          ? `${selected.length} logs deleted. -${removedPointsTotal} pts removed.`
-          : `${selected.length} logs deleted.`
+        `${selected.length} logs deleted.`
       );
       renderAll();
     });
@@ -681,6 +795,50 @@
     document.getElementById("backToSkillsBtn").addEventListener("click", () => {
       showScreen("skills");
     });
+    const startMembershipCheckoutBtn = document.getElementById("startMembershipCheckoutBtn");
+    if (startMembershipCheckoutBtn) {
+      startMembershipCheckoutBtn.addEventListener("click", () => {
+        if (typeof startMembershipPaymentFlow === "function") startMembershipPaymentFlow();
+      });
+    }
+    const membershipCodeSubmitBtn = document.getElementById("membershipCodeSubmitBtn");
+    const membershipCodeInput = document.getElementById("membershipCodeInput");
+    const membershipCodeEntry = document.getElementById("membershipCodeEntry");
+    const membershipCodeRevealBtn = document.getElementById("membershipCodeRevealBtn");
+    const submitMembershipCode = () => {
+      if (!(membershipCodeInput instanceof HTMLInputElement)) return;
+      const rawCode = membershipCodeInput.value || "";
+      const ok = typeof activateMembershipFromCode === "function"
+        ? activateMembershipFromCode(rawCode, 0)
+        : false;
+      if (!ok) {
+        showToast("Membership code was not valid.", "warn");
+        return;
+      }
+      membershipCodeInput.value = "";
+      if (membershipCodeEntry instanceof HTMLElement) membershipCodeEntry.style.display = "none";
+    };
+    if (membershipCodeRevealBtn) {
+      membershipCodeRevealBtn.addEventListener("click", () => {
+        if (!(membershipCodeEntry instanceof HTMLElement)) return;
+        membershipCodeEntry.style.display = membershipCodeEntry.style.display === "none" ? "grid" : "none";
+        if (membershipCodeEntry.style.display !== "none" && membershipCodeInput instanceof HTMLInputElement) {
+          membershipCodeInput.focus();
+        }
+      });
+    }
+    if (membershipCodeSubmitBtn) {
+      membershipCodeSubmitBtn.addEventListener("click", () => {
+        submitMembershipCode();
+      });
+    }
+    if (membershipCodeInput instanceof HTMLInputElement) {
+      membershipCodeInput.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        submitMembershipCode();
+      });
+    }
     document.getElementById("bookingTypeFilter").addEventListener("change", (e) => {
       state.bookingFilters.type = e.target.value;
       renderBooking();
@@ -708,6 +866,12 @@
     document.getElementById("unlockViaPaymentBtn").addEventListener("click", () => {
       startPaymentUnlockFlow();
     });
+    const unlockMembershipBtn = document.getElementById("unlockMembershipBtn");
+    if (unlockMembershipBtn) {
+      unlockMembershipBtn.addEventListener("click", () => {
+        if (typeof startMembershipPaymentFlow === "function") startMembershipPaymentFlow();
+      });
+    }
     document.getElementById("unlockCodeInput").addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
@@ -730,25 +894,39 @@
     });
     document.getElementById("rewardClaimSubmittedBtn").addEventListener("click", () => {
       const ctx = state.rewardClaimContext;
-      if (!ctx || !ctx.rewardKey) {
+      const rewardKeys = (ctx && Array.isArray(ctx.rewardKeys) && ctx.rewardKeys.length)
+        ? ctx.rewardKeys.map((key) => String(key)).filter(Boolean)
+        : (ctx && ctx.rewardKey ? [String(ctx.rewardKey)] : []);
+      if (!ctx || !rewardKeys.length) {
         showToast("No active reward claim.", "warn");
         return;
       }
       if (!state.claimedRewards || typeof state.claimedRewards !== "object") state.claimedRewards = {};
       if (!state.rewardClaimDetails || typeof state.rewardClaimDetails !== "object") state.rewardClaimDetails = {};
-      state.claimedRewards[ctx.rewardKey] = true;
-      state.rewardClaimDetails[ctx.rewardKey] = {
-        rewardLabel: ctx.rewardLabel || "Reward",
-        submittedViaTally: true,
-        claimedAt: new Date().toISOString()
-      };
+      const claimedAt = new Date().toISOString();
+      rewardKeys.forEach((rewardKey) => {
+        const label = (ctx.rewardLabelsByKey && ctx.rewardLabelsByKey[rewardKey])
+          ? String(ctx.rewardLabelsByKey[rewardKey])
+          : (ctx.rewardLabel || "Reward");
+        state.claimedRewards[rewardKey] = true;
+        state.rewardClaimDetails[rewardKey] = {
+          rewardLabel: label,
+          submittedViaTally: true,
+          claimedAt
+        };
+      });
       state.rewardClaimContext = null;
       const frame = document.getElementById("rewardClaimFrame");
       if (frame) frame.setAttribute("src", "about:blank");
       const backdrop = document.getElementById("rewardClaimModalBackdrop");
       if (backdrop) backdrop.style.display = "none";
-      showToast(`Reward claimed: ${ctx.rewardLabel}`);
-      trackAnalytics("reward_claim_submitted", { rewardKey: ctx.rewardKey });
+      if (rewardKeys.length === 1) {
+        showToast(`Reward claimed: ${ctx.rewardLabel}`);
+        trackAnalytics("reward_claim_submitted", { rewardKey: rewardKeys[0] });
+      } else {
+        showToast(`${rewardKeys.length} rewards claimed.`);
+        trackAnalytics("reward_claim_submitted_all", { count: rewardKeys.length });
+      }
       renderRewards();
       persistState();
     });

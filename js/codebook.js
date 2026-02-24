@@ -1,5 +1,6 @@
 window.WH_CODEBOOK = {
   hillWalkUnlockCode: "",
+  membershipUnlockCode: "WHC-MEMBER-ACCESS",
   hillWalkUnlockCodesBySkillId: {
     1: "WALK-LEAD",
     2: "WALK-RECALL",

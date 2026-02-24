@@ -15,6 +15,8 @@
 
     function renderDashboard() {
       const rank = getRank(state.points);
+      const memberActive = typeof hasActiveMembership === "function" && hasActiveMembership();
+      const rankDisplay = memberActive ? `${rank.name} (Member)` : rank.name;
       const unlocked = unlockedSkills();
       const assessmentsBooked = state.slots.filter(e => e.status === "booked" || e.status === "passed").length;
       const walksBooked = state.monthlyWalks.filter(e => e.status === "booked" || e.status === "passed").length;
@@ -27,7 +29,7 @@
       const end = nextRank || rank.min;
       const pct = nextRank ? Math.max(0, Math.min(100, ((state.points - start) / (end - start)) * 100)) : 100;
 
-      document.getElementById("rankLabel").textContent = rank.name;
+      document.getElementById("rankLabel").textContent = rankDisplay;
       document.getElementById("totalPoints").textContent = state.points;
       document.getElementById("unlockedCount").textContent = `${unlocked.length} / ${state.skills.length}`;
       document.getElementById("dashboardUserName").textContent = state.user;
@@ -102,6 +104,8 @@
 
     function renderGlanceChips() {
       const rank = getRank(state.points);
+      const memberActive = typeof hasActiveMembership === "function" && hasActiveMembership();
+      const rankDisplay = memberActive ? `${rank.name} (Member)` : rank.name;
       const rankIconMap = {
         "No Rank Yet": "○",
         "Trail Dog Starter": "🧭",
@@ -114,7 +118,7 @@
       };
       const rankIcon = rankIconMap[rank.name] || "🏅";
       document.querySelectorAll("[data-glance-rank]").forEach(el => {
-        el.textContent = `Rank: ${rankIcon} ${rank.name}`;
+        el.textContent = `Rank: ${rankIcon} ${rankDisplay}`;
       });
       document.querySelectorAll("[data-glance-points]").forEach(el => {
         el.textContent = `Points: ${state.points}`;
@@ -137,6 +141,46 @@
     function renderSkills() {
       const container = document.getElementById("skillsGrid");
       const unlockPoints = (POINT_MAP && POINT_MAP.unlock_skill && Number(POINT_MAP.unlock_skill.points)) || 0;
+      const membershipActive = typeof hasActiveMembership === "function" && hasActiveMembership();
+      const skillsPricingLine = document.getElementById("skillsPricingLine");
+      const membershipCard = document.getElementById("membershipCard");
+      const membershipBtn = document.getElementById("startMembershipCheckoutBtn");
+      const membershipStatus = document.getElementById("membershipStatusText");
+      const membershipCodeInput = document.getElementById("membershipCodeInput");
+      const membershipCodeSubmitBtn = document.getElementById("membershipCodeSubmitBtn");
+      const membershipCodeRevealBtn = document.getElementById("membershipCodeRevealBtn");
+      const membershipCodeEntry = document.getElementById("membershipCodeEntry");
+      if (membershipBtn) {
+        membershipBtn.textContent = membershipActive ? "Membership Active" : "Buy Membership (+20 pts)";
+        membershipBtn.disabled = membershipActive;
+      }
+      if (skillsPricingLine) {
+        skillsPricingLine.innerHTML = membershipActive
+          ? "<strong>Pricing:</strong> Assessment day £25 for members."
+          : "<strong>Pricing:</strong> Skill unlock £4.99 (or free via related hill walk), assessment day £40, membership £35/month.";
+      }
+      if (membershipCard) {
+        membershipCard.style.display = membershipActive ? "none" : "block";
+      }
+      if (membershipStatus) {
+        membershipStatus.textContent = membershipActive
+          ? "Status: Active (all skills unlocked + free hill walk payments)"
+          : "Status: Not active";
+      }
+      if (membershipCodeInput instanceof HTMLInputElement) {
+        membershipCodeInput.disabled = membershipActive;
+        membershipCodeInput.placeholder = membershipActive ? "Membership active" : "Enter membership code";
+      }
+      if (membershipCodeSubmitBtn) {
+        membershipCodeSubmitBtn.disabled = membershipActive;
+      }
+      if (membershipCodeRevealBtn) {
+        membershipCodeRevealBtn.disabled = membershipActive;
+        membershipCodeRevealBtn.textContent = membershipActive ? "Membership Active" : "I Have a Membership Code";
+      }
+      if (membershipActive && membershipCodeEntry instanceof HTMLElement) {
+        membershipCodeEntry.style.display = "none";
+      }
       container.innerHTML = state.skills.map(skill => {
         const progress = skill.unlocked ? getProgressMeta(skill) : null;
         const trailEtiquetteLocked = skill.id === 14 && !areFirstThirteenSkillsPassed();
@@ -473,6 +517,7 @@
       ]).join("<br><br>");
 
       const ladderSteps = Array.from(document.querySelectorAll("#rewardsLadder .step"));
+      let openClaimableCount = 0;
       let currentReachedThresholdStep = null;
       ladderSteps.forEach((step) => {
         const kind = step.getAttribute("data-kind");
@@ -493,6 +538,8 @@
           ? Object.keys(state.skillAssessmentsPassed).length >= 14
           : kind === "walks-attended"
             ? walksAttendedCount() >= walkGoal
+            : kind === "membership"
+              ? (typeof hasActiveMembership === "function" && hasActiveMembership())
           : (isMasterStep ? (state.points >= threshold && hasMasterRequirements()) : state.points >= threshold);
         const isCurrentTier = !kind && reached && step === currentReachedThresholdStep;
         step.classList.toggle("reached", reached);
@@ -528,6 +575,9 @@
           )
         );
         const claimed = reached && Boolean((state.claimedRewards || {})[rewardKey]) && hasSubmittedClaimDetails;
+        if (!isTrailStarter && reached && !claimed) {
+          openClaimableCount += 1;
+        }
         const btnText = claimed ? "Claimed" : (reached ? "Claim Reward" : "Locked");
         const escapedLabel = fallbackBase
           .replace(/&/g, "&amp;")
@@ -557,6 +607,14 @@
           </div>
         `;
       });
+
+      const claimAllBtn = document.getElementById("claimAllRewardsBtn");
+      if (claimAllBtn) {
+        claimAllBtn.disabled = openClaimableCount < 1;
+        claimAllBtn.textContent = openClaimableCount > 0
+          ? `Claim All Open Rewards (${openClaimableCount})`
+          : "Claim All Open Rewards";
+      }
 
       const history = document.getElementById("pointsHistoryList");
       const resolveSkillNameFromSourceKey = (sourceKey) => {
@@ -629,6 +687,13 @@
     }
 
     function renderBooking() {
+      const memberActive = typeof hasActiveMembership === "function" && hasActiveMembership();
+      const bookingPricingLine = document.getElementById("bookingPricingLine");
+      if (bookingPricingLine) {
+        bookingPricingLine.innerHTML = memberActive
+          ? "<strong>Pricing:</strong> Monthly hill walk free for members. Assessment day £25 for members."
+          : "<strong>Pricing:</strong> Monthly hill walk £25 per dog (includes free unlock access to that walk’s related skill). Assessment day £40. Member bookings are logged automatically.";
+      }
       if (!state.bookingFilters || typeof state.bookingFilters !== "object") {
         state.bookingFilters = { type: "all", status: "all" };
       }
@@ -724,16 +789,21 @@
       const walkBookingPoints = (POINT_MAP && POINT_MAP.walk_attendance && Number(POINT_MAP.walk_attendance.points)) || 0;
 
       const renderEventCard = (event) => {
+        const memberActive = event.eventType === "hillwalk" && typeof hasActiveMembership === "function" && hasActiveMembership();
         const paymentState = event.paymentStatus || "unpaid";
         const primaryAction = event.status === "pending"
-          ? `<button class="btn-primary" data-action="${event.eventType === "assessment" ? "book-slot" : "book-walk"}" data-id="${event.id}">${event.waitlistOnly ? "Join Waitlist" : (event.eventType === "assessment" ? "Book" : `Book Walk (+${walkBookingPoints} pts)`)}</button>`
+          ? (memberActive
+            ? `<button class="btn-primary" data-action="${event.eventType === "assessment" ? "book-slot" : "book-walk"}" data-id="${event.id}">Book</button>`
+            : `<button class="btn-primary" data-action="${event.eventType === "assessment" ? "book-slot" : "book-walk"}" data-id="${event.id}">${event.waitlistOnly ? "Join Waitlist" : (event.eventType === "assessment" ? "Book" : `Book Walk (+${walkBookingPoints} pts)`)}</button>`)
           : event.status === "booked" && paymentState === "paid"
             ? ""
             : event.status === "booked"
               ? `<button class="btn-primary" data-action="pay-now" data-id="${event.id}" data-kind="${event.eventType}">Pay</button>`
                 : "";
-        const paymentBadge = event.status === "booked" && paymentState === "paid"
+        const paymentBadge = event.status === "booked" && paymentState === "paid" && !(memberActive && event.eventType === "hillwalk")
           ? `<span class="status-pill payment">Paid</span>`
+          : event.status === "booked" && memberActive && event.eventType === "hillwalk"
+            ? ""
           : event.status === "booked"
             ? `<span class="status-pill pending">Payment Due</span>`
             : "";
@@ -742,6 +812,9 @@
           : event.status === "waitlisted"
             ? `<button class="btn-secondary" data-action="leave-waitlist" data-id="${event.id}" data-kind="${event.eventType}">Leave Waitlist</button>`
             : "";
+        const membershipBadge = event.eventType === "hillwalk" && memberActive && event.status === "booked"
+          ? `<span class="status-pill payment">Member Free</span>`
+          : "";
 
         return `
           <div class="slot">
@@ -758,6 +831,7 @@
               ${primaryAction}
               ${secondaryAction}
               ${paymentBadge}
+              ${membershipBadge}
               ${event.status === "pending" ? "" : `<span class="status-pill ${event.status}">${toStatusText(event.status)}</span>`}
             </div>
           </div>

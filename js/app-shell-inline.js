@@ -30,9 +30,6 @@ window.WH_APP_SHELL = `
       <span class="pill network-pill" id="networkStatusPill" aria-live="polite">Online</span>
     </div>
   </header>
-  <div class="update-test-banner" id="appVersionBanner" aria-live="polite">
-    Live Build: <strong id="appVersionText">loading...</strong>
-  </div>
 
   <main>
     <section class="screen active" id="dashboard">
@@ -128,7 +125,25 @@ window.WH_APP_SHELL = `
         <span class="glance-chip" data-glance-points>Points: 0</span>
       </div>
       <p class="muted" style="margin-bottom: 12px;">14 Wild Hound skills arranged by progression.</p>
-      <p class="muted" style="margin-bottom: 12px;"><strong>Pricing:</strong> Skill unlock £4.99 (or free via related hill walk), assessment day £40.</p>
+      <p class="muted" id="skillsPricingLine" style="margin-bottom: 12px;"><strong>Pricing:</strong> Skill unlock £4.99 (or free via related hill walk), assessment day £40, membership £35/month.</p>
+      <div class="card" id="membershipCard" style="margin-bottom: 12px;">
+        <h3>Membership</h3>
+        <p class="muted">Membership is £35/month. It includes one unlock code for full roadmap access and free structured hill walk booking. Bookings are logged automatically.</p>
+        <p class="muted" id="membershipStatusText">Status: Not active</p>
+        <div class="btn-row" style="margin-top: 8px;">
+          <button type="button" class="btn-secondary" id="membershipCodeRevealBtn">I Have a Membership Code</button>
+          <button type="button" class="btn-primary" id="startMembershipCheckoutBtn">Buy Membership (+20 pts)</button>
+        </div>
+        <div class="form-grid" id="membershipCodeEntry" style="display: none; margin-top: 8px;">
+          <label>
+            Membership Code
+            <input type="text" id="membershipCodeInput" placeholder="Enter membership code" autocapitalize="characters" spellcheck="false" autocomplete="one-time-code" />
+          </label>
+          <div class="btn-row" style="margin-top: 0;">
+            <button type="button" class="btn-secondary" id="membershipCodeSubmitBtn">Activate Membership Code</button>
+          </div>
+        </div>
+      </div>
       <div class="skills-grid" id="skillsGrid"></div>
     </section>
 
@@ -227,6 +242,7 @@ window.WH_APP_SHELL = `
         </div>
         <div class="btn-row">
           <button class="btn-gold" type="button" id="jumpToBookingBtn">Book Your Next Walk</button>
+          <button class="btn-secondary" type="button" id="claimAllRewardsBtn" data-action="claim-all-rewards">Claim All Open Rewards</button>
         </div>
       </div>
 
@@ -241,6 +257,7 @@ window.WH_APP_SHELL = `
           <div class="step" data-threshold="700">🗺️ Trail Dog Pathfinder (700 pts) - Digital Badge + Wild Hound Club Beanie + Certificate</div>
           <div class="step" data-threshold="950">🏕️ Trail Dog Expert (950 pts) - Digital Badge + Wild Hound Club Hoodie + Certificate</div>
           <div class="step" data-threshold="1250">👑 Trail Dog Master (1250 pts) - Digital Badge + £100 Training Voucher + Certificate</div>
+          <div class="step" data-kind="membership">📘 Membership Active - Wild Hound Skills Book</div>
           <div class="step" data-kind="walks-attended" data-walks="10">🎖 Attend 10 Walks - Digital Badge + Priority Booking Window</div>
           <div class="step" data-kind="all-skills-pass">🏅 All 14 Skills Passed - Digital Badge + Champion Rosette + Priority Booking Window</div>
         </div>
@@ -258,7 +275,7 @@ window.WH_APP_SHELL = `
         <span class="glance-chip" data-glance-rank>Rank: -</span>
         <span class="glance-chip" data-glance-points>Points: 0</span>
       </div>
-      <p class="muted" style="margin-bottom: 12px;"><strong>Pricing:</strong> Monthly hill walk £25 per dog (includes free unlock access to that walk’s related skill). Assessment day £40.</p>
+      <p class="muted" id="bookingPricingLine" style="margin-bottom: 12px;"><strong>Pricing:</strong> Monthly hill walk £25 per dog (includes free unlock access to that walk’s related skill). Assessment day £40. Member bookings are logged automatically.</p>
       <div class="card mobile-sticky-controls" id="bookingControlsCard">
         <h3>Booking Overview</h3>
         <p class="muted">See your upcoming bookings, available events, and past/completed events in one place.</p>
@@ -351,6 +368,17 @@ window.WH_APP_SHELL = `
         </ul>
       </details>
 
+      <details class="card collapse-card" id="about-install">
+        <summary>Install on Your Phone</summary>
+        <p class="muted">You can install Wild Hound like an app so it opens from your home screen.</p>
+        <ul class="guide-list">
+          <li><strong>iPhone (Safari):</strong> Open this site in Safari, tap the Share icon, then tap <strong>Add to Home Screen</strong>.</li>
+          <li><strong>Android (Chrome):</strong> Open browser menu (3 dots), tap <strong>Install app</strong> or <strong>Add to Home screen</strong>, then confirm.</li>
+          <li>If you do not see install options, refresh the page and try again while online.</li>
+          <li>After install, open Wild Hound from your home screen icon instead of browser tabs.</li>
+        </ul>
+      </details>
+
       <details class="card collapse-card" open>
         <summary>How Progression Works</summary>
         <ol class="guide-list">
@@ -382,6 +410,17 @@ window.WH_APP_SHELL = `
       </details>
 
       <details class="card collapse-card">
+        <summary>Membership (£35 per month)</summary>
+        <ul class="guide-list">
+          <li>Free monthly structured hill walk.</li>
+          <li>Full skill roadmap unlocked.</li>
+          <li>Priority booking.</li>
+          <li>Discounted assessments.</li>
+          <li>Ongoing progression tracking.</li>
+        </ul>
+      </details>
+
+      <details class="card collapse-card">
         <summary>Booking & Payments</summary>
         <ul class="guide-list">
           <li>Assessments and monthly walks are shown in chronological order.</li>
@@ -389,7 +428,7 @@ window.WH_APP_SHELL = `
           <li>Booking and canceling adjusts related points based on your event history.</li>
           <li>Payment opens Stripe checkout for skill unlocks, walks, and assessments.</li>
           <li>Skill unlocks are completed when you enter your post-payment unlock code in the app.</li>
-          <li><strong>Costs:</strong> Skill unlock £4.99 (or free via related hill walk), monthly hill walk £25, assessment day £40.</li>
+          <li><strong>Costs:</strong> Skill unlock £4.99 (or free via related hill walk), monthly hill walk £25, assessment day £40, membership £35/month.</li>
         </ul>
       </details>
 
@@ -533,12 +572,13 @@ window.WH_APP_SHELL = `
     <div class="btn-row">
       <button type="button" class="btn-primary" id="unlockViaCodeBtn">Enter Unlock Code</button>
       <button type="button" class="btn-secondary" id="unlockViaPaymentBtn">Pay for This Skill</button>
+      <button type="button" class="btn-secondary" id="unlockMembershipBtn">Buy Membership</button>
       <button type="button" class="btn-secondary" id="unlockSkillCancelBtn">Cancel</button>
     </div>
     <div id="unlockCodeSection" class="form-grid" style="display: none; margin-top: 10px;">
       <label>
         Unlock Code
-        <input type="text" id="unlockCodeInput" placeholder="Enter hill walk or purchase code" autocapitalize="characters" spellcheck="false" autocomplete="one-time-code" />
+        <input type="text" id="unlockCodeInput" placeholder="Enter hill walk, purchase, or membership code" autocapitalize="characters" spellcheck="false" autocomplete="one-time-code" />
       </label>
       <div class="btn-row" style="margin-top: 0;">
         <button type="button" class="btn-primary" id="unlockCodeSubmitBtn">Unlock with Code</button>

@@ -5,6 +5,10 @@ Remote override file (optional): codebook.json
 HILL WALK UNLOCK CODE
 Legacy fallback: CODE
 
+MEMBERSHIP UNLOCK CODE
+Unlocks all skills and enables free hill walk booking (Tally form still required).
+WHC-MEMBER-ACCESS
+
 HILL WALK UNLOCK CODES (SKILL-SPECIFIC)
 1  Loose-Lead Legends: WALK-LEAD
 2  Reliable Recalls: WALK-RECALL

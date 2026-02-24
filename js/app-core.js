@@ -21,6 +21,9 @@
       selectedLogIds: {},
       logEditContext: null,
       rewardClaimContext: null,
+      memberWalkBookingPendingById: {},
+      membershipActive: false,
+      membershipActivatedAt: "",
       bookingOverrides: {},
       pointsHistory: [],
       claimedRewards: {},
@@ -62,6 +65,7 @@
     const POINT_RULES = {
       simple: [
         { key: "unlock_skill", label: "Unlock Skill", points: 10 },
+        { key: "member_bonus", label: "Membership Bonus", points: 20, oneTime: true },
         { key: "pass_stage", label: "Pass Stage 1-3", points: 5 },
         { key: "pass_skill_assessment", label: "Pass Skill (Stage 4 Assessment)", points: 20, oncePerSkill: true },
         { key: "master_skill", label: "Master Skill (Stage 5 Stretch Goal)", points: 8 },
@@ -99,6 +103,13 @@
     const MAX_BACKUP_BYTES = Number(APP_CONFIG.maxBackupBytes) || (2 * 1024 * 1024);
     const REMOTE_ASSESSMENT_RESET_APPLIED_KEY = "wildhound_assessment_reset_applied";
     const REWARD_CLAIM_TALLY_URL = String(APP_CONFIG.tallyRewardFormUrl || "https://tally.so/r/rj69o2");
+    const WALK_BOOKING_TALLY_URL = String(APP_CONFIG.tallyWalkBookingFormUrl || "");
+    const BOOKING_CREATE_WEBHOOK_URL = String(APP_CONFIG.bookingCreateWebhookUrl || "").trim();
+    const BOOKING_CANCEL_WEBHOOK_URL = String(APP_CONFIG.bookingCancelWebhookUrl || "").trim();
+    const STRIPE_LINKS = (APP_CONFIG.stripe && APP_CONFIG.stripe.links && typeof APP_CONFIG.stripe.links === "object")
+      ? APP_CONFIG.stripe.links
+      : {};
+    const MEMBERSHIP_PAYMENT_LINK = String(STRIPE_LINKS.membership || "").trim();
     // Set to `true` to require installed-app mode, or `false` to allow normal browser use.
     const ENFORCE_INSTALL_GATE = Boolean(APP_CONFIG.enforceInstallGate);
     let deferredInstallPrompt = null;
@@ -184,7 +195,8 @@
             "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
             "claimedRewards", "rewardClaimDetails",
             "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
-            "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt", "analyticsCounters"
+            "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt", "analyticsCounters",
+            "memberWalkBookingPendingById", "membershipActive", "membershipActivatedAt"
           ];
           keys.forEach((key) => {
             if (saved[key] !== undefined) state[key] = saved[key];
@@ -254,6 +266,9 @@
         pointsHistory: state.pointsHistory,
         claimedRewards: state.claimedRewards,
         rewardClaimDetails: state.rewardClaimDetails,
+        memberWalkBookingPendingById: state.memberWalkBookingPendingById,
+        membershipActive: state.membershipActive,
+        membershipActivatedAt: state.membershipActivatedAt,
         bookedSlotIds: state.bookedSlotIds,
         passedSlotIds: state.passedSlotIds,
         practiceLogs: state.practiceLogs,
@@ -306,6 +321,10 @@
     function getPurchaseUnlockCodeForSkill(skillId) {
       const bySkill = runtimeCodebook && runtimeCodebook.unlockCodesBySkillId;
       return normalizeUpperCode(bySkill && bySkill[skillId]);
+    }
+
+    function getMembershipUnlockCode() {
+      return normalizeUpperCode(runtimeCodebook && runtimeCodebook.membershipUnlockCode);
     }
 
     function getAssessmentPassCodeForSkill(skillId) {
@@ -385,7 +404,8 @@
         "skillEvidenceSubmitted", "skillAssessmentsPassed", "assessmentDiscountBySkill", "level5ReachedBySkill", "stage5StretchDoneBySkill", "skillStepChecks", "pointsHistory",
         "claimedRewards", "rewardClaimDetails",
         "bookedSlotIds", "passedSlotIds", "practiceLogs", "skills", "bookingOverrides",
-        "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt", "analyticsCounters"
+        "loggedSkillLimits", "loggedDateLimit", "loggedViewMode", "lastBackupAt", "analyticsCounters",
+        "memberWalkBookingPendingById", "membershipActive", "membershipActivatedAt"
       ];
       keys.forEach((key) => {
         if (migratedIncoming[key] !== undefined) state[key] = migratedIncoming[key];
@@ -393,6 +413,7 @@
 
       if (!state.user || !String(state.user).trim()) state.user = "User";
       normalizeBookingFilters();
+      normalizeMembershipData();
       normalizeSkillCatalog();
       normalizeBookingData();
       ensurePracticeLogIds();
@@ -474,6 +495,84 @@
       }
     }
 
+    function reportBookingCancellation(kind, event) {
+      if (!BOOKING_CANCEL_WEBHOOK_URL) return false;
+      const payload = {
+        event: "booking_cancelled",
+        at: new Date().toISOString(),
+        user: String(state.user || "User"),
+        bookingType: kind === "assessment" ? "assessment" : "hillwalk",
+        bookingId: Number(event && event.id) || 0,
+        day: String(event && event.day ? event.day : ""),
+        time: String(event && event.time ? event.time : ""),
+        month: String(event && event.month ? event.month : ""),
+        location: String(event && event.location ? event.location : ""),
+        skill: String(event && event.skill ? event.skill : ""),
+        membershipActive: typeof hasActiveMembership === "function" ? hasActiveMembership() : false
+      };
+      const body = JSON.stringify(payload);
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: "application/json" });
+          return navigator.sendBeacon(BOOKING_CANCEL_WEBHOOK_URL, blob);
+        }
+      } catch (error) {
+        // Continue to fetch fallback.
+      }
+      try {
+        fetch(BOOKING_CANCEL_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          mode: "cors",
+          keepalive: true
+        }).catch(() => {});
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function reportBookingCreated(kind, event, status) {
+      if (!BOOKING_CREATE_WEBHOOK_URL) return false;
+      const normalizedStatus = status === "waitlisted" ? "waitlisted" : "booked";
+      const payload = {
+        event: "booking_created",
+        at: new Date().toISOString(),
+        user: String(state.user || "User"),
+        bookingType: kind === "assessment" ? "assessment" : "hillwalk",
+        bookingStatus: normalizedStatus,
+        bookingId: Number(event && event.id) || 0,
+        day: String(event && event.day ? event.day : ""),
+        time: String(event && event.time ? event.time : ""),
+        month: String(event && event.month ? event.month : ""),
+        location: String(event && event.location ? event.location : ""),
+        skill: String(event && event.skill ? event.skill : ""),
+        membershipActive: typeof hasActiveMembership === "function" ? hasActiveMembership() : false
+      };
+      const body = JSON.stringify(payload);
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: "application/json" });
+          return navigator.sendBeacon(BOOKING_CREATE_WEBHOOK_URL, blob);
+        }
+      } catch (error) {
+        // Continue to fetch fallback.
+      }
+      try {
+        fetch(BOOKING_CREATE_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          mode: "cors",
+          keepalive: true
+        }).catch(() => {});
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
     function validateEventsPayload(payload) {
       return getEventsValidator()(payload);
     }
@@ -517,6 +616,43 @@
       const nextType = validTypes.has(saved.type) ? saved.type : "all";
       const nextStatus = validStatuses.has(saved.status) ? saved.status : "all";
       state.bookingFilters = { type: nextType, status: nextStatus };
+    }
+
+    function normalizeMembershipData() {
+      if (!state.memberWalkBookingPendingById || typeof state.memberWalkBookingPendingById !== "object") {
+        state.memberWalkBookingPendingById = {};
+      }
+      state.membershipActive = Boolean(state.membershipActive);
+      state.membershipActivatedAt = state.membershipActivatedAt ? String(state.membershipActivatedAt) : "";
+    }
+
+    function hasAnyRecordedActivity() {
+      const hasPointsHistory = Array.isArray(state.pointsHistory) && state.pointsHistory.length > 0;
+      const hasPracticeLogs = Object.values(state.practiceLogs || {}).some((logs) => Array.isArray(logs) && logs.length > 0);
+      const hasBookingActivity = [...(state.slots || []), ...(state.monthlyWalks || [])]
+        .some((event) => {
+          const status = String(event && event.status ? event.status : "pending");
+          return status !== "pending";
+        });
+      const hasStepChecks = Object.values(state.skillStepChecks || {}).some((skillChecks) => {
+        if (!skillChecks || typeof skillChecks !== "object") return false;
+        return [1, 2, 3, 4].some((stepNum) => {
+          const row = skillChecks[stepNum];
+          return Array.isArray(row) ? row.some(Boolean) : Boolean(row);
+        });
+      });
+      const hasAssessmentState = Object.keys(state.skillEvidenceSubmitted || {}).length > 0
+        || Object.keys(state.skillAssessmentsPassed || {}).length > 0
+        || Object.keys(state.assessmentDiscountBySkill || {}).length > 0;
+      const hasClaims = Object.keys(state.claimedRewards || {}).length > 0;
+      const hasMembership = Boolean(state.membershipActive);
+      return hasPointsHistory
+        || hasPracticeLogs
+        || hasBookingActivity
+        || hasStepChecks
+        || hasAssessmentState
+        || hasClaims
+        || hasMembership;
     }
 
     function normalizeBookingData() {
@@ -802,18 +938,32 @@
         { id: 14, name: "Trail Etiquette Pro", desc: "Reliable cue response and path manners.", unlocked: false, points: 0, progressStatus: "not_started" }
       ];
 
+      const preserveSavedProgress = hasAnyRecordedActivity();
+      const validProgress = new Set(["not_started", "in_progress", "passed", "needs_more_work"]);
       const byId = Object.fromEntries((state.skills || []).map((s) => [Number(s.id), s]));
       state.skills = officialSkills.map((base) => {
         const saved = byId[base.id] || {};
+        const mergedProgress = validProgress.has(String(saved.progressStatus || ""))
+          ? String(saved.progressStatus)
+          : base.progressStatus;
         return {
           id: base.id,
           name: base.name,
           desc: base.desc,
-          unlocked: saved.unlocked ?? base.unlocked,
-          points: saved.points ?? base.points,
-          progressStatus: saved.progressStatus || base.progressStatus
+          unlocked: preserveSavedProgress ? (saved.unlocked ?? base.unlocked) : base.unlocked,
+          points: preserveSavedProgress ? (saved.points ?? base.points) : base.points,
+          progressStatus: preserveSavedProgress ? mergedProgress : base.progressStatus
         };
       });
+
+      if (!preserveSavedProgress) {
+        state.skillStepChecks = {};
+        state.skillEvidenceSubmitted = {};
+        state.skillAssessmentsPassed = {};
+        state.assessmentDiscountBySkill = {};
+        state.level5ReachedBySkill = {};
+        state.stage5StretchDoneBySkill = {};
+      }
 
       const walkSkillMap = {
         "Hill Climb Control": "Close & Behind",
@@ -844,6 +994,7 @@
     loadPersistedState();
     ensurePracticeLogIds();
     normalizeBookingFilters();
+    normalizeMembershipData();
     applyLocalEventsData();
     normalizeBookingData();
     normalizeSkillCatalog();
@@ -1093,6 +1244,10 @@
       if (appliedPoints <= 0) return false;
       const historyId = `${Date.now()}-${Math.random().toString(16).slice(2, 9)}`;
       const historyLabel = String(options.label || rule.label);
+      const toastLabel = historyLabel
+        .replace(/\(\s*[+\-]?\d+\s*pts?\s*\)/gi, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
       state.pointsHistory.unshift({
         id: historyId,
         label: historyLabel,
@@ -1100,7 +1255,7 @@
         when: new Date().toLocaleString(),
         sourceKey
       });
-      showToast(`+${appliedPoints} pts: ${historyLabel}`);
+      showToast(toastLabel || "Progress updated.");
       if (rule.oneTime) state.awardedEvents[eventKey] = true;
       if (options.uniqueSource && sourceKey) {
         if (!state.awardedSourceKeys || typeof state.awardedSourceKeys !== "object") state.awardedSourceKeys = {};
@@ -1165,10 +1320,11 @@
 
     function applyAutoRankBonuses() {}
 
-    function unlockSkill(skillId, source = "walk") {
+    function unlockSkill(skillId, source = "walk", options = {}) {
       const skill = state.skills.find(s => s.id === skillId);
       if (!skill || skill.unlocked) return;
-      if (skill.id === 14 && !areFirstThirteenSkillsPassed()) {
+      const force = options && options.force === true;
+      if (!force && skill.id === 14 && !areFirstThirteenSkillsPassed()) {
         showToast("Trail Etiquette Pro unlocks after the first 13 skills are passed.", "warn");
         return;
       }
@@ -1176,6 +1332,101 @@
       awardEvent("unlock_skill");
       showToast(`Unlocked: ${skill.name}`);
       if (!state.selectedSkillId) state.selectedSkillId = skillId;
+    }
+
+    function activateMembership() {
+      if (state.membershipActive) return false;
+      state.membershipActive = true;
+      state.membershipActivatedAt = state.membershipActivatedAt || new Date().toISOString();
+      awardEvent("member_bonus", {
+        sourceKey: "membership:bonus",
+        uniqueSource: true,
+        label: "Membership Bonus"
+      });
+      return true;
+    }
+
+    function unlockAllSkillsFromMembership() {
+      state.skills.forEach((skill) => {
+        if (!skill || skill.unlocked) return;
+        unlockSkill(skill.id, "membership", { force: true });
+      });
+    }
+
+    function hasActiveMembership() {
+      return state.membershipActive === true;
+    }
+
+    function activateMembershipFromCode(rawCode, sourceSkillId = null) {
+      const expected = getMembershipUnlockCode();
+      const code = normalizeUpperCode(rawCode);
+      if (!expected || !code || code !== expected) return false;
+      if (state.membershipActive) {
+        showToast("Membership is already active.");
+        return true;
+      }
+      activateMembership();
+      unlockAllSkillsFromMembership();
+      renderAll();
+      persistState();
+      showToast("Membership activated. All skills unlocked and hill walk payments waived.");
+      trackAnalytics("membership_code_success", { sourceSkillId: sourceSkillId || 0 });
+      return true;
+    }
+
+    function openMemberWalkBookingForm(walk) {
+      if (!walk || !walk.id) return false;
+      if (!WALK_BOOKING_TALLY_URL) {
+        showToast("Walk booking form is not configured yet.", "warn");
+        return false;
+      }
+      let formUrl = WALK_BOOKING_TALLY_URL;
+      try {
+        const u = new URL(WALK_BOOKING_TALLY_URL, window.location.href);
+        u.searchParams.set("name", state.user || "User");
+        u.searchParams.set("Name", state.user || "User");
+        u.searchParams.set("walk_month", String(walk.month || ""));
+        u.searchParams.set("Walk_month", String(walk.month || ""));
+        u.searchParams.set("walk_id", String(walk.id));
+        u.searchParams.set("Walk_id", String(walk.id));
+        u.searchParams.set("skill", String(walk.skill || ""));
+        u.searchParams.set("Skill", String(walk.skill || ""));
+        formUrl = u.toString();
+      } catch (error) {
+        // Keep raw URL fallback if URL parsing fails.
+      }
+      state.memberWalkBookingPendingById[String(walk.id)] = true;
+      window.open(formUrl, "_blank", "noopener,noreferrer");
+      showToast("Tally booking form opened.");
+      return true;
+    }
+
+    function bookMemberWalkAfterTally(walkId) {
+      const walk = state.monthlyWalks.find((w) => Number(w.id) === Number(walkId));
+      if (!walk || walk.status !== "pending") return { ok: false, reason: "not_pending" };
+      if (!state.memberWalkBookingPendingById[String(walk.id)]) {
+        return { ok: false, reason: "form_not_opened" };
+      }
+      if (walk.waitlistOnly) {
+        walk.waitlistCount += 1;
+        walk.status = "waitlisted";
+        delete state.memberWalkBookingPendingById[String(walk.id)];
+        return { ok: true, waitlisted: true };
+      }
+      walk.bookedCount += 1;
+      walk.status = "booked";
+      walk.paymentStatus = "paid";
+      walk.bookingPointHistoryIds = walk.bookingPointHistoryIds || [];
+      const walkLabel = walk.month
+        ? `Attend Monthly Walk - ${walk.month}`
+        : `Attend Monthly Walk - ${walk.day || "Upcoming Walk"}`;
+      const attendanceAwardId = awardEvent("walk_attendance", {
+        sourceKey: `booking:hillwalk:${walk.id}`,
+        label: walkLabel
+      });
+      if (attendanceAwardId) walk.bookingPointHistoryIds.push(attendanceAwardId);
+      delete state.memberWalkBookingPendingById[String(walk.id)];
+      return { ok: true, waitlisted: false };
     }
 
     function openUnlockSkillModal(skillId) {
@@ -1187,7 +1438,7 @@
       }
       unlockSkillModalSkillId = skillId;
       document.getElementById("unlockSkillTitle").textContent = `Unlock ${skill.name}`;
-      document.getElementById("unlockSkillPrompt").textContent = `Unlock ${skill.name} with a hill walk code or purchase code.`;
+      document.getElementById("unlockSkillPrompt").textContent = `Unlock ${skill.name} with a hill walk, purchase, or membership code.`;
       document.getElementById("unlockCodeInput").value = "";
       document.getElementById("unlockCodeSection").style.display = "none";
       document.getElementById("unlockSkillModalBackdrop").style.display = "flex";
@@ -1211,6 +1462,10 @@
       }
       const expectedHillWalkCode = getHillWalkUnlockCodeForSkill(unlockSkillModalSkillId);
       const expectedPurchaseCode = getPurchaseUnlockCodeForSkill(unlockSkillModalSkillId);
+      if (activateMembershipFromCode(code, unlockSkillModalSkillId)) {
+        closeUnlockSkillModal();
+        return;
+      }
       const isValid = code === expectedHillWalkCode || code === getHillWalkUnlockCode() || code === expectedPurchaseCode;
       if (!isValid) {
         showToast("Invalid unlock code for this skill.", "warn");
@@ -1221,6 +1476,16 @@
       closeUnlockSkillModal();
       unlockSkill(targetSkillId, "walk");
       trackAnalytics("unlock_code_success", { skillId: targetSkillId });
+    }
+
+    function startMembershipPaymentFlow() {
+      if (!MEMBERSHIP_PAYMENT_LINK) {
+        showToast("Membership checkout link is not configured yet.", "warn");
+        return;
+      }
+      const returnTo = "skills.html?tab=skills&membership_paid=1";
+      const payUrl = `${SKILL_PAYMENT_PAGE_URL}?type=membership&skill=${encodeURIComponent("Wild Hound Membership")}&stripeLink=${encodeURIComponent(MEMBERSHIP_PAYMENT_LINK)}&returnTo=${encodeURIComponent(returnTo)}`;
+      window.location.assign(payUrl);
     }
 
     function startPaymentUnlockFlow() {
@@ -1291,20 +1556,40 @@
         url.searchParams.delete("payment_pending");
         window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
       }
-      const paid = url.searchParams.get("paid") === "1" || url.searchParams.get("test_paid") === "1";
-      const skillId = Number(url.searchParams.get("skillId") || 0);
-      if (!paid || !skillId) return;
-      const skill = (state.skills || []).find((s) => Number(s.id) === skillId);
-      if (skill && !skill.unlocked) {
+      const membershipPaid = url.searchParams.get("membership_paid") === "1" || url.searchParams.get("membership_test_paid") === "1";
+      if (membershipPaid) {
+        const firstLocked = (state.skills || []).find((s) => !s.unlocked);
         showScreen("skills");
         renderSkills();
-        openUnlockSkillModal(skillId);
-        const codeSection = document.getElementById("unlockCodeSection");
-        if (codeSection) codeSection.style.display = "grid";
-        showToast("Payment complete. Enter your unlock code to unlock this skill.");
+        if (firstLocked) {
+          openUnlockSkillModal(firstLocked.id);
+          const codeSection = document.getElementById("unlockCodeSection");
+          if (codeSection) codeSection.style.display = "grid";
+        } else {
+          const entered = window.prompt("Enter your membership unlock code");
+          if (entered !== null && !activateMembershipFromCode(entered, 0)) {
+            showToast("Membership code was not valid.", "warn");
+          }
+        }
+        showToast("Membership payment complete. Enter your membership code to activate all-skill access and free walk booking.");
+      }
+      const paid = url.searchParams.get("paid") === "1" || url.searchParams.get("test_paid") === "1";
+      const skillId = Number(url.searchParams.get("skillId") || 0);
+      if (paid && skillId) {
+        const skill = (state.skills || []).find((s) => Number(s.id) === skillId);
+        if (skill && !skill.unlocked) {
+          showScreen("skills");
+          renderSkills();
+          openUnlockSkillModal(skillId);
+          const codeSection = document.getElementById("unlockCodeSection");
+          if (codeSection) codeSection.style.display = "grid";
+          showToast("Payment complete. Enter your unlock code to unlock this skill.");
+        }
       }
       url.searchParams.delete("paid");
       url.searchParams.delete("test_paid");
+      url.searchParams.delete("membership_paid");
+      url.searchParams.delete("membership_test_paid");
       window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     }
 

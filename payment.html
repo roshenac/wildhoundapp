@@ -119,8 +119,8 @@
 
     <div class="card">
       <h2>Secure Checkout</h2>
-      <p class="muted">You will be redirected to Stripe to complete payment securely.</p>
-      <p class="muted">After payment, use your emailed unlock code in the app to unlock this skill.</p>
+      <p class="muted" id="checkoutIntro">You will be redirected to Stripe to complete payment securely.</p>
+      <p class="muted" id="checkoutHelp">After payment, use your emailed unlock code in the app to unlock this skill.</p>
       <div class="field">
         <label for="email">Email (optional)</label>
         <input id="email" type="email" placeholder="you@example.com" />
@@ -141,16 +141,24 @@
     const skill = params.get("skill") || "Selected Skill";
     const skillId = params.get("skillId") || "";
     const bookedMonth = params.get("month") || "";
+    const stripeLinkOverride = (params.get("stripeLink") || "").trim();
     const returnToRaw = params.get("returnTo") || "";
     const isTestMode = params.get("test") === "1";
-    document.getElementById("skillLine").textContent = paymentType === "walk" && bookedMonth
-      ? `Booking: ${bookedMonth}`
-      : `Unlocking: ${skill}`;
+    const isMembershipPayment = paymentType === "membership";
+    document.getElementById("skillLine").textContent = isMembershipPayment
+      ? "Membership checkout"
+      : (paymentType === "walk" && bookedMonth
+        ? `Booking: ${bookedMonth}`
+        : `Unlocking: ${skill}`);
+    if (isMembershipPayment) {
+      document.getElementById("checkoutHelp").textContent = "After payment, use your membership code in the app to unlock all skills and enable free walk booking.";
+    }
 
     const STRIPE_PAYMENT_LINKS = {
       skill: "https://buy.stripe.com/14AeVf9i9cvU7h33Eh57W00",
       walk: "https://buy.stripe.com/4gM8wRbqh8fE1WJdeR57W01",
-      assessment: "https://buy.stripe.com/bJe14p0LD9jIbxj6Qt57W02"
+      assessment: "https://buy.stripe.com/bJe14p0LD9jIbxj6Qt57W02",
+      membership: ""
     };
 
     // One Stripe Payment Link per skill unlock (method requested).
@@ -174,6 +182,7 @@
     };
 
     function getStripeLink(type) {
+      if (stripeLinkOverride) return stripeLinkOverride;
       return STRIPE_PAYMENT_LINKS[type] || STRIPE_PAYMENT_LINKS.skill;
     }
 
@@ -218,6 +227,7 @@
       }
       if (isTestMode) {
         const unlockCode = paymentType === "skill" && skillId ? `SKILL${skillId}` : "";
+        const returnFlag = paymentType === "membership" ? "membership_test_paid=1" : "test_paid=1";
         const done = document.getElementById("doneMsg");
         done.style.display = "block";
         done.textContent = unlockCode
@@ -226,7 +236,7 @@
         setTimeout(() => {
           const target = returnTo || "booking.html?tab=booking";
           const joiner = target.includes("?") ? "&" : "?";
-          window.location.assign(`${target}${joiner}test_paid=1`);
+          window.location.assign(`${target}${joiner}${returnFlag}`);
         }, 900);
         return;
       }
@@ -234,8 +244,20 @@
       const base = paymentType === "skill"
         ? getSkillStripeLink(skillId)
         : getStripeLink(paymentType);
+      if (!base) {
+        document.getElementById("doneMsg").style.display = "block";
+        document.getElementById("doneMsg").textContent = "Stripe link is not configured for this payment type.";
+        return;
+      }
       const email = (document.getElementById("email").value || "").trim();
-      const url = new URL(base);
+      let url;
+      try {
+        url = new URL(base);
+      } catch (e) {
+        document.getElementById("doneMsg").style.display = "block";
+        document.getElementById("doneMsg").textContent = "Invalid Stripe link configuration.";
+        return;
+      }
       if (email) url.searchParams.set("prefilled_email", email);
       const skillSlug = String(skill || "")
         .toLowerCase()
