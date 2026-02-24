@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Wild Hound Club trail dog progression app" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/wildhoundapp/icon-192-v3.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/wildhoundapp/apple-touch-icon-v3.png" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/wildhoundapp/apple-touch-icon-v3.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/wildhoundapp/icon-512-v3.png" />
+  <link rel="shortcut icon" href="/wildhoundapp/icon-192-v3.png" />
+  <link rel="manifest" href="/wildhoundapp/manifest.webmanifest" />
+  <meta name="theme-color" content="#1d3525" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Wild Hound Club App" />
+  <title>Wild Hound Club App Payment</title>
+  <style>
+    :root {
+      --forest: #1d3525;
+      --cream: #efe8d3;
+      --gold: #9c4a3c;
+      --text: #4c5550;
+      --line: #d7d2c6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--text);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      padding: 18px;
+    }
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fcfaf5;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    h1, h2 {
+      margin: 0 0 10px;
+      color: var(--forest);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .muted {
+      color: #77807a;
+      font-size: 0.9rem;
+    }
+    .field {
+      margin-top: 10px;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      margin-bottom: 4px;
+      color: #6d766f;
+    }
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.92rem;
+      background: #fffdf8;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button, a {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--forest);
+      color: #f4f1e8;
+    }
+    .btn-secondary {
+      border-color: var(--forest);
+      color: var(--forest);
+      background: transparent;
+    }
+    .done {
+      display: none;
+      border: 1px solid #b9cbbd;
+      background: #eaf2eb;
+      color: #2d5a3b;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Wild Hound Checkout</h1>
+      <p class="muted" id="skillLine">Unlocking skill access.</p>
+    </div>
+
+    <div class="card">
+      <h2>Secure Checkout</h2>
+      <p class="muted" id="checkoutIntro">You will be redirected to Stripe to complete payment securely.</p>
+      <p class="muted" id="checkoutHelp">After payment, use your emailed unlock code in the app to unlock this skill.</p>
+      <div class="field">
+        <label for="email">Email (optional)</label>
+        <input id="email" type="email" placeholder="you@example.com" />
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" id="payBtn" type="button">Pay with Stripe</button>
+        <button class="btn-secondary" id="backToAppBtn" type="button">Back to App</button>
+        <button class="btn-secondary" id="paymentCheckBtn" type="button">I Already Paid</button>
+      </div>
+      <div class="done" id="doneMsg">Redirecting to Stripe...</div>
+      <p class="muted" style="margin-top:8px;">Payment status may take a short moment to reflect. Use “I Already Paid” to return and re-check your bookings or skill unlock flow.</p>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const paymentType = (params.get("type") || "skill").toLowerCase();
+    const skill = params.get("skill") || "Selected Skill";
+    const skillId = params.get("skillId") || "";
+    const bookedMonth = params.get("month") || "";
+    const stripeLinkOverride = (params.get("stripeLink") || "").trim();
+    const returnToRaw = params.get("returnTo") || "";
+    const isTestMode = params.get("test") === "1";
+    const isMembershipPayment = paymentType === "membership";
+    document.getElementById("skillLine").textContent = isMembershipPayment
+      ? "Membership checkout"
+      : (paymentType === "walk" && bookedMonth
+        ? `Booking: ${bookedMonth}`
+        : `Unlocking: ${skill}`);
+    if (isMembershipPayment) {
+      document.getElementById("checkoutHelp").textContent = "After payment, use your membership code in the app to unlock all skills and enable free walk booking.";
+    }
+
+    const STRIPE_PAYMENT_LINKS = {
+      skill: "https://buy.stripe.com/14AeVf9i9cvU7h33Eh57W00",
+      walk: "https://buy.stripe.com/4gM8wRbqh8fE1WJdeR57W01",
+      assessment: "https://buy.stripe.com/bJe14p0LD9jIbxj6Qt57W02",
+      membership: ""
+    };
+
+    // One Stripe Payment Link per skill unlock (method requested).
+    // Fill each value with that skill's dedicated Stripe link.
+    // If a skill link is left blank, checkout falls back to STRIPE_PAYMENT_LINKS.skill.
+    const SKILL_PAYMENT_LINKS_BY_ID = {
+      1: "https://buy.stripe.com/14AeVf9i9cvU7h33Eh57W00",
+      2: "https://buy.stripe.com/cNi5kFbqhcvUeJv3Eh57W0g",
+      3: "https://buy.stripe.com/28E14p0LD7bAeJv7Ux57W04",
+      4: "https://buy.stripe.com/00w6oJ7a1anM8l70s557W05",
+      5: "https://buy.stripe.com/6oUfZjeCtfI66cZcaN57W06",
+      6: "https://buy.stripe.com/14A14p2TLgMa58V1w957W07",
+      7: "https://buy.stripe.com/fZu6oJ0LD7bAgRDcaN57W08",
+      8: "https://buy.stripe.com/9B6bJ39i9anMfNzcaN57W09",
+      9: "https://buy.stripe.com/00w7sN2TL2VkgRDfmZ57W0a",
+      10: "https://buy.stripe.com/cNibJ37a11RgfNzgr357W0b",
+      11: "https://buy.stripe.com/cNi8wR0LDbrQ44R0s557W0c",
+      12: "https://buy.stripe.com/fZu4gB8e59jIgRD8YB57W0d",
+      13: "https://buy.stripe.com/14A28tfGx7bA8l7fmZ57W0e",
+      14: "https://buy.stripe.com/3cI28t65X9jIdFr3Eh57W0f"
+    };
+
+    function getStripeLink(type) {
+      if (stripeLinkOverride) return stripeLinkOverride;
+      return STRIPE_PAYMENT_LINKS[type] || STRIPE_PAYMENT_LINKS.skill;
+    }
+
+    function getSkillStripeLink(skillIdValue) {
+      const id = Number(skillIdValue);
+      if (!Number.isFinite(id) || id <= 0) return STRIPE_PAYMENT_LINKS.skill;
+      const specific = SKILL_PAYMENT_LINKS_BY_ID[id];
+      return (typeof specific === "string" && specific.trim())
+        ? specific.trim()
+        : STRIPE_PAYMENT_LINKS.skill;
+    }
+
+    function resolveSafeReturnTo(raw) {
+      if (!raw) return "";
+      try {
+        const u = new URL(raw, window.location.href);
+        if (u.origin !== window.location.origin) return "";
+        const fileName = (u.pathname.split("/").pop() || "").toLowerCase();
+        const allowed = new Set(["booking.html", "skills.html", "dashboard.html"]);
+        if (!allowed.has(fileName)) return "";
+        return `${fileName}${u.search || ""}${u.hash || ""}`;
+      } catch (e) {
+        return "";
+      }
+    }
+
+    if (isTestMode) {
+      const info = document.createElement("p");
+      info.className = "muted";
+      info.style.marginTop = "8px";
+      info.innerHTML = "<strong>Test mode:</strong> no charge will be made.";
+      const card = document.querySelector(".card:nth-of-type(2)");
+      if (card) card.insertBefore(info, card.querySelector(".field"));
+    }
+
+    document.getElementById("payBtn").addEventListener("click", () => {
+      const returnTo = resolveSafeReturnTo(returnToRaw);
+      try {
+        if (returnTo) localStorage.setItem("wildhound_last_return_to", returnTo);
+      } catch (e) {
+        // Ignore storage errors.
+      }
+      if (isTestMode) {
+        const unlockCode = paymentType === "skill" && skillId ? `SKILL${skillId}` : "";
+        const returnFlag = paymentType === "membership" ? "membership_test_paid=1" : "test_paid=1";
+        const done = document.getElementById("doneMsg");
+        done.style.display = "block";
+        done.textContent = unlockCode
+          ? `Test payment complete. Use unlock code: ${unlockCode}`
+          : "Test payment complete.";
+        setTimeout(() => {
+          const target = returnTo || "booking.html?tab=booking";
+          const joiner = target.includes("?") ? "&" : "?";
+          window.location.assign(`${target}${joiner}${returnFlag}`);
+        }, 900);
+        return;
+      }
+
+      const base = paymentType === "skill"
+        ? getSkillStripeLink(skillId)
+        : getStripeLink(paymentType);
+      if (!base) {
+        document.getElementById("doneMsg").style.display = "block";
+        document.getElementById("doneMsg").textContent = "Stripe link is not configured for this payment type.";
+        return;
+      }
+      const email = (document.getElementById("email").value || "").trim();
+      let url;
+      try {
+        url = new URL(base);
+      } catch (e) {
+        document.getElementById("doneMsg").style.display = "block";
+        document.getElementById("doneMsg").textContent = "Invalid Stripe link configuration.";
+        return;
+      }
+      if (email) url.searchParams.set("prefilled_email", email);
+      const skillSlug = String(skill || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 32) || "unknown-skill";
+      const monthSlug = String(bookedMonth || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 24);
+      const clientRef = paymentType === "walk" && monthSlug
+        ? `${paymentType}-${skillId || "unknown"}-${monthSlug}-${skillSlug}`
+        : `${paymentType}-${skillId || "unknown"}-${skillSlug}`;
+      url.searchParams.set("client_reference_id", clientRef);
+      document.getElementById("doneMsg").style.display = "block";
+      document.getElementById("doneMsg").textContent = "Redirecting to Stripe...";
+      window.location.href = url.toString();
+    });
+
+    function resolveBackTarget() {
+      const returnTo = resolveSafeReturnTo(returnToRaw);
+      if (returnTo) return returnTo;
+      try {
+        const cached = localStorage.getItem("wildhound_last_return_to") || "";
+        const safeCached = resolveSafeReturnTo(cached);
+        if (safeCached) return safeCached;
+      } catch (e) {
+        // Ignore storage errors.

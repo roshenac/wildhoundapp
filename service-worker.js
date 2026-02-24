@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'whc-v1.0.3';
+const CACHE_VERSION = 'whc-v1.0.4';
 const APP_SHELL_CACHE = `whc-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `whc-runtime-${CACHE_VERSION}`;
 

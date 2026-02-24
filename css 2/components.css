@@ -1,0 +1,431 @@
+.skills-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+    .skill-card {
+      position: relative;
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .skill-card.locked {
+      opacity: 0.58;
+      background: #f2efe7;
+    }
+    .skill-card.status-not-started {
+      border-color: #c8ced0;
+      background: #f5f6f4;
+    }
+    .skill-card.status-in-progress {
+      border-color: #d9c891;
+      background: #faf4e5;
+    }
+    .skill-card.status-needs-more-work {
+      border-color: #d7b39b;
+      background: #f9ece4;
+    }
+    .skill-card.status-passed {
+      border-color: #b8cab9;
+      background: #eaf2eb;
+    }
+    .skill-card.status-passed-stretch {
+      border-color: #9ebf9f;
+      background: #e2f0e4;
+      box-shadow: inset 0 0 0 1px #c7dbc9;
+    }
+
+    .status {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status.unlocked { color: var(--success); }
+    .status.not-started { color: #8b928d; }
+    .status.locked { color: var(--warn); }
+    .status.passed { color: #2d5f3f; }
+    .status.passed-stretch { color: #244e34; }
+    .status.in-progress { color: #7b6c3e; }
+    .status.needs-more-work { color: #8a4f2a; }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #faf8f2;
+      margin-bottom: 8px;
+    }
+    details summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--forest);
+      font-size: 0.92rem;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+
+    .checklist {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+    }
+    .check-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.88rem;
+      min-height: 44px;
+    }
+    .step-locked {
+      opacity: 0.6;
+      background: #f2eee4;
+    }
+    .step-locked summary {
+      color: var(--muted);
+    }
+
+    .badge-placeholder {
+      border: 1px dashed var(--gold);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-top: 10px;
+    }
+    .badge-placeholder.earned {
+      border-style: solid;
+      border-color: #b8cab9;
+      background: #eaf2eb;
+      color: #2f5e3f;
+    }
+    .badge-award {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      text-align: left;
+    }
+    .badge-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid #94b39b;
+      background: #f4fbf4;
+      display: grid;
+      place-items: center;
+      color: #2f5e3f;
+      font-weight: 700;
+      font-size: 0.9rem;
+      flex: 0 0 auto;
+    }
+    .badge-title {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: #2f5e3f;
+      font-size: 0.94rem;
+    }
+    .badge-sub {
+      margin: 2px 0 0;
+      color: #4d5f51;
+      font-size: 0.78rem;
+    }
+
+    .ladder {
+      position: relative;
+      margin-left: 8px;
+      padding-left: 16px;
+      border-left: 3px solid #d8d2c3;
+      display: grid;
+      gap: 14px;
+    }
+
+    .step {
+      position: relative;
+      background: #f9f6ef;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .step::before {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      left: -22px;
+      top: 15px;
+      border-radius: 50%;
+      background: #cfc8b5;
+      border: 2px solid var(--cream);
+    }
+
+    .step.reached {
+      border-color: var(--gold);
+      background: #faf3de;
+    }
+
+    .step.reached::before { background: var(--gold); }
+    .step.reward-state-current {
+      border-color: #9c4a3c;
+      background: #f7ebe7;
+      box-shadow: 0 0 0 2px rgba(156, 74, 60, 0.16);
+    }
+    .step.reward-state-current::before {
+      background: #9c4a3c;
+    }
+    .step.reward-state-locked {
+      opacity: 0.72;
+      background: #f4f0e6;
+    }
+    .step.reward-state-locked::before {
+      background: #bcb5a2;
+    }
+
+    .reward-step-row {
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .reward-step-main {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .reward-state-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid #bdb5a0;
+      background: #f0ece1;
+      color: #655f52;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+    }
+    .step.reward-state-complete .reward-state-chip {
+      border-color: #c0a658;
+      background: #efe2bf;
+      color: #57461c;
+    }
+    .step.reward-state-current .reward-state-chip {
+      border-color: #a65a4c;
+      background: #f2d9d2;
+      color: #6b2f26;
+    }
+    .step.reward-state-locked .reward-state-chip {
+      border-color: #cfc8b8;
+      background: #ebe7dd;
+      color: #7a7568;
+    }
+    .reward-step-label {
+      line-height: 1.4;
+    }
+    .reward-claim-btn {
+      flex: 0 0 auto;
+      min-width: 132px;
+      white-space: nowrap;
+    }
+    .reward-step-status {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding-top: 10px;
+      white-space: nowrap;
+    }
+
+    .reward-hero {
+      background: linear-gradient(160deg, #fbf6e9 0%, #f3ecda 100%);
+      border-color: #cfbe8a;
+    }
+
+    .reward-kicker {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #7f7458;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .reward-points {
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      font-size: 2rem;
+      margin: 0;
+      line-height: 1.05;
+    }
+
+    #jumpToBookingBtn {
+      background: var(--forest);
+      color: var(--cream);
+      border: 1px solid #16281d;
+      box-shadow: 0 4px 12px rgba(22, 40, 29, 0.22);
+    }
+    #jumpToBookingBtn:hover,
+    #jumpToBookingBtn:focus-visible {
+      background: #234230;
+      border-color: #16281d;
+    }
+
+    .digital-badge-card {
+      margin-top: 10px;
+      border: 1px solid #cfbe8a;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #fff8e9 0%, #f3ead5 100%);
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45);
+    }
+    .digital-badge-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--gold);
+      background: radial-gradient(circle at 30% 30%, #fff8df 0%, #ecd189 100%);
+      display: grid;
+      place-items: center;
+      font-size: 1.15rem;
+      flex: 0 0 auto;
+      box-shadow: 0 3px 10px rgba(36, 54, 42, 0.14);
+    }
+    .digital-badge-title {
+      margin: 0;
+      color: var(--forest);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.02rem;
+      font-weight: 700;
+    }
+    .digital-badge-sub {
+      margin: 2px 0 0;
+      color: #5a625d;
+      font-size: 0.82rem;
+    }
+
+    .digital-badge-card.tier-starter { border-color: #c7be9a; background: linear-gradient(145deg, #f7f4ea 0%, #ebe6d8 100%); }
+    .digital-badge-card.tier-rookie { border-color: #d5bc72; background: linear-gradient(145deg, #fff7df 0%, #f3e8c4 100%); }
+    .digital-badge-card.tier-explorer { border-color: #c8a45a; background: linear-gradient(145deg, #fbf1d6 0%, #ead7ab 100%); }
+    .digital-badge-card.tier-advanced { border-color: #9bb59b; background: linear-gradient(145deg, #eef7ee 0%, #dcebdc 100%); }
+    .digital-badge-card.tier-pathfinder { border-color: #88a8a2; background: linear-gradient(145deg, #ebf4f4 0%, #d6e6e5 100%); }
+    .digital-badge-card.tier-expert { border-color: #9a9cc8; background: linear-gradient(145deg, #f0f1fb 0%, #dee0f6 100%); }
+    .digital-badge-card.tier-master { border-color: #c79f78; background: linear-gradient(145deg, #fdf1e8 0%, #f3dfcf 100%); }
+
+
+    .example-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #faf8f2;
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .example-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .example-title {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--forest);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .slots {
+      display: grid;
+      gap: 8px;
+    }
+
+    .slot {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #f8f6ef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .month-header {
+      margin: 6px 0 2px;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--forest);
+      font-size: 0.96rem;
+      letter-spacing: 0.2px;
+    }
+
+    .slot small { color: var(--muted); }
+
+    .status-pill {
+      font-size: 0.74rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+    }
+    .status-pill.booked { color: #2f5e3f; background: #e7f1e9; border-color: #bdd4c1; }
+    .status-pill.passed { color: #35503d; background: #e2ebdd; border-color: #afc5ae; }
+    .status-pill.pending { color: #7b6c3e; background: #f7f0dd; border-color: #d9c891; }
+    .status-pill.waitlisted { color: #6a4a2d; background: #f4e4d8; border-color: #d9b89d; }
+    .status-pill.payment { color: #6a5330; background: #f7efdb; border-color: #d8c08d; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-top: 1px solid var(--line);
+      background: rgba(252, 250, 245, 0.96);
+      backdrop-filter: blur(6px);
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      padding: 8px 6px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .tab-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.72rem;
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      padding: 6px 4px;
+      border-radius: 8px;
+      min-height: 44px;
+    }
+
+    .tab-btn.active {
+      color: var(--forest);
+      background: #f0ece0;
+      font-weight: 700;
+    }
+
+    .tab-btn .icon { width: 19px; height: 19px; }
+
+    .inline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }

@@ -43,20 +43,20 @@
       codebookVersion: "",
       practiceLogs: {},
       skills: [
-        { id: 1, name: "Loose-Lead Legends", desc: "Confident loose-lead skills across trail conditions.", unlocked: true, points: 60, progressStatus: "not_started" },
-        { id: 2, name: "Reliable Recalls", desc: "First-cue recall around real-world distractions.", unlocked: false, points: 8, progressStatus: "not_started" },
-        { id: 3, name: "Downstay Masters", desc: "Calm and steady down-stays in active environments.", unlocked: false, points: 24, progressStatus: "not_started" },
-        { id: 4, name: "Close & Behind", desc: "Precise position control for narrow trail sections.", unlocked: false, points: 12, progressStatus: "not_started" },
-        { id: 5, name: "Livestock Calm", desc: "Safe, calm behavior around visible livestock.", unlocked: false, points: 0 },
-        { id: 6, name: "Polite Passes: Dogs", desc: "Neutral dog-to-dog passing at close distances.", unlocked: false, points: 0 },
-        { id: 7, name: "Polite Passes: People", desc: "Calm passing behavior around all people types.", unlocked: false, points: 0 },
-        { id: 8, name: "Food Manners", desc: "Ignore dropped and visible food temptations.", unlocked: false, points: 0 },
-        { id: 9, name: "Settle & Wait", desc: "Switch off and settle during trail breaks.", unlocked: false, points: 0 },
-        { id: 10, name: "Emergency Stop / Check-In", desc: "Rapid stop/check-in response at distance.", unlocked: false, points: 0 },
-        { id: 11, name: "Crate or Car Calm", desc: "Calm loading and waiting in crate/car.", unlocked: false, points: 0 },
-        { id: 12, name: "Handling & Vet Confidence", desc: "Confident handling for checks and care.", unlocked: false, points: 0 },
-        { id: 13, name: "Muzzle Training", desc: "Comfortable, stress-free muzzle wear.", unlocked: false, points: 0 },
-        { id: 14, name: "Trail Etiquette Pro", desc: "Reliable cue response and path manners.", unlocked: false, points: 0 }
+        { id: 1, name: "Loose-Lead Legends", desc: "Confident loose-lead skills across trail conditions.", unlocked: true, points: 0, progressStatus: "not_started" },
+        { id: 2, name: "Reliable Recalls", desc: "First-cue recall around real-world distractions.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 3, name: "Downstay Masters", desc: "Calm and steady down-stays in active environments.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 4, name: "Close & Behind", desc: "Precise position control for narrow trail sections.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 5, name: "Livestock Calm", desc: "Safe, calm behavior around visible livestock.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 6, name: "Polite Passes: Dogs", desc: "Neutral dog-to-dog passing at close distances.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 7, name: "Polite Passes: People", desc: "Calm passing behavior around all people types.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 8, name: "Food Manners", desc: "Ignore dropped and visible food temptations.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 9, name: "Settle & Wait", desc: "Switch off and settle during trail breaks.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 10, name: "Emergency Stop / Check-In", desc: "Rapid stop/check-in response at distance.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 11, name: "Crate or Car Calm", desc: "Calm loading and waiting in crate/car.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 12, name: "Handling & Vet Confidence", desc: "Confident handling for checks and care.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 13, name: "Muzzle Training", desc: "Comfortable, stress-free muzzle wear.", unlocked: false, points: 0, progressStatus: "not_started" },
+        { id: 14, name: "Trail Etiquette Pro", desc: "Reliable cue response and path manners.", unlocked: false, points: 0, progressStatus: "not_started" }
       ],
       slots: [],
       monthlyWalks: []
@@ -123,6 +123,27 @@
       } catch (error) {
         // no-op
       }
+    }
+
+    function resetPersistedProfileState() {
+      try { localStorage.removeItem(SAVED_APP_STATE_KEY); } catch (error) {}
+      try { localStorage.removeItem(SAVED_USERNAME_KEY); } catch (error) {}
+      try { localStorage.removeItem(SAVED_SEEN_EVENTS_VERSION_KEY); } catch (error) {}
+      try { localStorage.removeItem(SAVED_DISMISSED_EVENTS_VERSION_KEY); } catch (error) {}
+      try { localStorage.removeItem(SAVED_CODEBOOK_VERSION_KEY); } catch (error) {}
+    }
+
+    function maybeHandleResetProfileQuery() {
+      let url;
+      try {
+        url = new URL(window.location.href);
+      } catch (error) {
+        return;
+      }
+      if (url.searchParams.get("reset_profile") !== "1") return;
+      resetPersistedProfileState();
+      url.searchParams.delete("reset_profile");
+      window.location.replace(`${url.pathname}${url.search}${url.hash}`);
     }
 
     function refreshAppVersionBanner() {
@@ -938,7 +959,8 @@
         { id: 14, name: "Trail Etiquette Pro", desc: "Reliable cue response and path manners.", unlocked: false, points: 0, progressStatus: "not_started" }
       ];
 
-      const preserveSavedProgress = hasAnyRecordedActivity();
+      const forceDefaultSkills = Number(state.points || 0) === 0;
+      const preserveSavedProgress = !forceDefaultSkills && hasAnyRecordedActivity();
       const validProgress = new Set(["not_started", "in_progress", "passed", "needs_more_work"]);
       const byId = Object.fromEntries((state.skills || []).map((s) => [Number(s.id), s]));
       state.skills = officialSkills.map((base) => {
@@ -957,6 +979,7 @@
       });
 
       if (!preserveSavedProgress) {
+        state.selectedSkillId = 1;
         state.skillStepChecks = {};
         state.skillEvidenceSubmitted = {};
         state.skillAssessmentsPassed = {};
@@ -991,6 +1014,7 @@
       state.skills.forEach((skill) => syncSkillProgressFromSteps(skill.id));
     }
 
+    maybeHandleResetProfileQuery();
     loadPersistedState();
     ensurePracticeLogIds();
     normalizeBookingFilters();
