@@ -774,6 +774,7 @@
         // Ignore storage access issues in preview environments.
       }
       showToast("Username updated.");
+      if (typeof persistState === "function") persistState();
       renderAll();
     });
     document.getElementById("jumpToBookingBtn").addEventListener("click", () => {
