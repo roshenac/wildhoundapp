@@ -21,7 +21,7 @@ window.WH_CONFIG = Object.assign({
       skill: "https://buy.stripe.com/14AeVf9i9cvU7h33Eh57W00",
       walk: "https://buy.stripe.com/4gM8wRbqh8fE1WJdeR57W01",
       assessment: "https://buy.stripe.com/bJe14p0LD9jIbxj6Qt57W02",
-      membership: ""
+      membership: "https://buy.stripe.com/6oU00l3XPeE2atfdeR57W0h"
     }
   }
 }, window.WH_CONFIG || {});
