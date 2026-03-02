@@ -189,14 +189,12 @@
       );
 
       if (tabBtn instanceof HTMLElement) {
+        const isModifiedClick = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+        if (isModifiedClick) return;
+        e.preventDefault();
         const screenId = tabBtn.dataset.screen;
         showScreen(screenId);
-        if (screenId === "rewards") {
-          recalculatePointsFromHistory();
-          renderGlanceChips();
-          renderRewards();
-          persistState();
-        }
+        persistState();
       }
 
       const action = actionEl instanceof HTMLElement ? actionEl.dataset.action : undefined;
@@ -219,21 +217,18 @@
         state.bookingFilters.type = "hillwalk";
         state.bookingFilters.status = "booked";
         showScreen("booking");
-        renderBooking();
         persistState();
       }
       if (action === "open-booking-assessments-booked") {
         state.bookingFilters.type = "assessment";
         state.bookingFilters.status = "booked";
         showScreen("booking");
-        renderBooking();
         persistState();
       }
       if (action === "open-booking-walks-attended") {
         state.bookingFilters.type = "hillwalk";
         state.bookingFilters.status = "passed";
         showScreen("booking");
-        renderBooking();
         persistState();
       }
       if (action === "open-skills-passed") {
@@ -246,9 +241,6 @@
       }
       if (action === "open-rewards") {
         showScreen("rewards");
-        recalculatePointsFromHistory();
-        renderGlanceChips();
-        renderRewards();
       }
       if (action === "open-about-section") {
         const targetId = actionEl instanceof HTMLElement ? String(actionEl.dataset.target || "") : "";
@@ -767,7 +759,6 @@
       state.bookingFilters.type = "assessment";
       state.bookingFilters.status = "all";
       showScreen("booking");
-      renderBooking();
       persistState();
       showToast("Choose an assessment slot to book in.");
     });
@@ -1117,7 +1108,7 @@
     updateNetworkStatusPill();
     setEventsSyncState("loading", "Checking latest events...");
     showScreen(getInitialScreenFromUrl());
-    renderAll({ forceAll: true });
+    renderAll({ forceAll: true, immediate: true });
     handlePostPaymentDeepLink();
     hydrateRemoteCodebook({ silent: true });
     hydrateRemoteEvents({ silent: true }).finally(() => {

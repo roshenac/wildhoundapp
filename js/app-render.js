@@ -1043,7 +1043,11 @@
       renderAll();
     }
 
-    function renderAll(options = {}) {
+    let renderQueued = false;
+    let renderFrameHandle = null;
+    let queuedRenderOptions = { forceAll: false };
+
+    function flushRender(options = {}) {
       recalculatePointsFromHistory();
       renderDashboard();
       renderGlanceChips();
@@ -1057,4 +1061,33 @@
       if (forceAll || activeId === "logged") renderLoggedSkills();
       updateStickyCta();
       persistState();
+    }
+
+    function renderAll(options = {}) {
+      const opts = (options && typeof options === "object") ? options : {};
+      queuedRenderOptions.forceAll = queuedRenderOptions.forceAll || Boolean(opts.forceAll);
+      if (opts.immediate === true) {
+        if (renderFrameHandle !== null) {
+          if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(renderFrameHandle);
+          else clearTimeout(renderFrameHandle);
+          renderFrameHandle = null;
+        }
+        renderQueued = false;
+        const next = { ...queuedRenderOptions };
+        queuedRenderOptions = { forceAll: false };
+        flushRender(next);
+        return;
+      }
+      if (renderQueued) return;
+      renderQueued = true;
+      const schedule = typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame
+        : (cb) => setTimeout(cb, 0);
+      renderFrameHandle = schedule(() => {
+        renderFrameHandle = null;
+        renderQueued = false;
+        const next = { ...queuedRenderOptions };
+        queuedRenderOptions = { forceAll: false };
+        flushRender(next);
+      });
     }

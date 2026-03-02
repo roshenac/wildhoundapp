@@ -115,6 +115,7 @@
     let deferredInstallPrompt = null;
     let unlockSkillModalSkillId = null;
     let persistTimer = null;
+    let screenLoadingTimer = null;
 
     function debugLog() {
       if (!DEBUG_MODE || typeof console === "undefined") return;
@@ -230,6 +231,9 @@
       if (!state.user || !String(state.user).trim()) state.user = "User";
       if ((!state.pointsHistory || !state.pointsHistory.length) && Number(state.points) > 0) {
         state.points = 0;
+      }
+      if (Number(state.points || 0) === 0 && !hasAnyRecordedActivity()) {
+        state.user = "User";
       }
       try {
         state.codebookVersion = localStorage.getItem(SAVED_CODEBOOK_VERSION_KEY) || "";
@@ -976,6 +980,7 @@
       });
 
       if (!preserveSavedProgress) {
+        if (forceDefaultSkills) state.user = "User";
         state.selectedSkillId = 1;
         state.skillStepChecks = {};
         state.skillEvidenceSubmitted = {};
@@ -1646,7 +1651,14 @@
       if (!activeScreen) return;
       activeScreen.classList.add("active");
       activeScreen.classList.add("loading");
-      setTimeout(() => activeScreen.classList.remove("loading"), 140);
+      if (screenLoadingTimer) {
+        clearTimeout(screenLoadingTimer);
+        screenLoadingTimer = null;
+      }
+      screenLoadingTimer = setTimeout(() => {
+        activeScreen.classList.remove("loading");
+        screenLoadingTimer = null;
+      }, 140);
       const activeTab = nextScreenId === "skill-detail" ? "skills" : nextScreenId;
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.screen === activeTab);
