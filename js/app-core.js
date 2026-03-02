@@ -228,12 +228,17 @@
         // Ignore storage access issues in preview environments.
         debugLog("loadPersistedState failed", e);
       }
+      if (!state.user || !String(state.user).trim()) {
+        try {
+          const legacyName = localStorage.getItem(SAVED_USERNAME_KEY) || "";
+          if (legacyName && String(legacyName).trim()) state.user = String(legacyName).trim();
+        } catch (error) {
+          // Ignore storage failures.
+        }
+      }
       if (!state.user || !String(state.user).trim()) state.user = "User";
       if ((!state.pointsHistory || !state.pointsHistory.length) && Number(state.points) > 0) {
         state.points = 0;
-      }
-      if (Number(state.points || 0) === 0 && !hasAnyRecordedActivity()) {
-        state.user = "User";
       }
       try {
         state.codebookVersion = localStorage.getItem(SAVED_CODEBOOK_VERSION_KEY) || "";
