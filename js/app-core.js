@@ -985,7 +985,6 @@
       });
 
       if (!preserveSavedProgress) {
-        if (forceDefaultSkills) state.user = "User";
         state.selectedSkillId = 1;
         state.skillStepChecks = {};
         state.skillEvidenceSubmitted = {};
