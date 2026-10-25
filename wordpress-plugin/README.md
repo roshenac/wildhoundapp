@@ -1,31 +1,38 @@
 # Wild Hound Club — WordPress plugin foundation
 
-This folder contains the first native WordPress implementation of the Wild Hound Club app.
+This is an in-progress native WordPress plugin foundation. It is not yet a complete replacement for the original app and must be tested on a staging site before launch.
 
 ## Requirements
-- Self-hosted WordPress installation that permits installing custom plugins.
-- PHP 7.4+ recommended (test on the site's actual PHP version).
+- WordPress installation that permits custom plugins.
+- PHP 7.4+ (verify against the site's PHP version).
 - HTTPS enabled.
-- Users must be logged into WordPress to access their own progress.
+- Members must log in to track progress.
 
-## Install
-1. Download this repository branch as a ZIP from GitHub.
-2. Extract it locally.
-3. ZIP the `wordpress-plugin` folder itself, so the archive contains `wild-hound-club-app.php` at its root.
-4. In WordPress, open Plugins → Add New Plugin → Upload Plugin, upload the ZIP and activate it.
-5. Create a new WordPress page called **My Wild Hound** and add the shortcode:
-   `[wild_hound_app]`
-6. Restrict that page to logged-in members using your membership plugin or WordPress access controls.
+## Install on a test site
+1. Download the `wordpress-native-plugin` branch as a ZIP.
+2. Extract it and zip the contents of the `wordpress-plugin` directory so `wild-hound-club-app.php` is at the ZIP root.
+3. In WordPress, go to Plugins → Add New Plugin → Upload Plugin, upload and activate.
+4. Activation creates the editable **WHC Skills** content type and seeds the 14 initial skills.
+5. Create a page and add `[wild_hound_app]`.
+6. Restrict the page to members using the site's membership/access-control setup.
 
-## Included in this initial foundation
-- WordPress shortcode-based dashboard.
-- Per-WordPress-user progress stored in user meta.
-- Authenticated REST endpoints to read progress and log practice.
-- Fourteen-skill catalogue.
-- First unlocked skill, practice session count and +2 points per practice log.
-- Responsive styling in the Wild Hound forest-green / cream palette.
+## Editing training content
+After activation, use **WHC Skills** in the WordPress admin:
+- Edit the title and main description using the standard WordPress editor.
+- Set the unique skill number (1–14).
+- Edit the names and instructions for each of the four levels in the Skill settings and levels panel.
+- Set a featured image if useful.
+
+Skill titles, descriptions and level information are stored as WordPress content, separately from the application logic. The shortcode page can also be edited normally in WordPress/Avada.
+
+## Current functionality
+- A shortcode dashboard for logged-in members.
+- User-specific practice records and points stored in WordPress user meta.
+- Fourteen editable skills.
+- Four editable level names and instruction fields per skill.
+- First skill initially unlocked; practice logging adds two points.
 
 ## Not yet implemented
-This is a foundation, not a complete parity port of the original app. It does not yet include skill unlock purchases, Stripe webhook validation, membership entitlement integration, booking/assessment workflows, evidence uploads, full ranks/rewards, event management, import/export, or migration of existing users' browser-stored progress. Locked skills are intentionally not purchasable/unlockable in this initial version. Do not use client-visible unlock codes as an access-control mechanism.
+This is not a launch-ready full port. It does not yet include Paid Memberships Pro entitlement checks, paid skill unlocks, validated Stripe/webhook flows, bookings and assessments, evidence/video submissions, rank/reward rules, event management, import/export, or migration of data stored in the original app's browser. Locked skills cannot yet be purchased or unlocked. Do not use client-visible codes as access control.
 
-Before launch, test on a staging WordPress site, connect access control to your actual membership setup, and review privacy, backup, security and payment flows. The plugin does not modify or replace the existing app.
+Before production: test on staging, configure membership permissions, verify HTTPS, review privacy and backups, and test all payment/security flows. The plugin does not modify the original app.
